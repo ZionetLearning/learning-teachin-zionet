@@ -14,7 +14,7 @@ spec:
     metadata:
       name: 'zionet-apps-{{env}}'
       annotations:
-        # 1. Image List - רק רכיבים שצריכים עדכון (Manager הוסר)
+        # 1. Image List - רק רכיבים שצריכים עדכון
         argocd-image-updater.argoproj.io/image-list: >-
           accessor=teachindevacr.azurecr.io/accessor,
           engine=teachindevacr.azurecr.io/engine
@@ -27,9 +27,11 @@ spec:
         argocd-image-updater.argoproj.io/accessor.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
         argocd-image-updater.argoproj.io/engine.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
 
-        # 4. Helm parameter paths - שימוש ב-image-spec לכפיית נתיב אחד
-        argocd-image-updater.argoproj.io/accessor.helm.image-spec: accessor.image.repository
-        argocd-image-updater.argoproj.io/engine.helm.image-spec: engine.image.repository
+        # 4. Helm parameter paths - כפייה על שני הפרמטרים (דינמי)
+        argocd-image-updater.argoproj.io/accessor.helm.image-tag: accessor.image.tag
+        argocd-image-updater.argoproj.io/accessor.helm.image-name: accessor.image.name 
+        argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
+        argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.name
 
         # 5. Write back method
         argocd-image-updater.argoproj.io/write-back-method: argocd
@@ -68,15 +70,17 @@ spec:
           - name: dapr.installComponents
             value: "false"
 
-          # --- פרמטרים של MANAGER הוסרו ---
+          # --- פרמטרי תגית (דינמי) ---
+          - name: accessor.image.tag
+            value: '{{env}}' # זה הערך ההתחלתי (featest)
+          - name: engine.image.tag
+            value: '{{env}}' # זה הערך ההתחלתי (featest)
 
-          # --- כפיית התגית המלאה והעדכנית ביותר (כדי למנוע עדכון חוזר) ---
-          - name: accessor.image.repository
-            # **שימו לב: תגית מלאה צריכה להיות כאן, החלף אם יש תגית חדשה!**
-            value: teachindevacr.azurecr.io/accessor:featest-e6e9e15 
-          - name: engine.image.repository
-            # **שימו לב: תגית מלאה צריכה להיות כאן, החלף אם יש תגית חדשה!**
-            value: teachindevacr.azurecr.io/engine:featest-e6e9e15
+          # --- פרמטרי שם תמונה (קבוע) ---
+          - name: accessor.image.name
+            value: accessor
+          - name: engine.image.name
+            value: engine
             
       destination:
         server: 'https://kubernetes.default.svc'
