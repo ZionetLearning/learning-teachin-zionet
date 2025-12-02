@@ -10,7 +10,7 @@ public sealed class ChatHistorySnapshot
     [Required] public string Name { get; set; } = "New chat";
     public string ChatType { get; set; } = "default";
     [Required]
-    [Column(TypeName = "jsonb")]
+    [Column(TypeName = "json")]
     public required string History { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

@@ -1,4 +1,5 @@
-﻿using Engine.Helpers;
+﻿using System.Text.Json;
+using Engine.Models.Chat;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Microsoft.AspNetCore.Mvc;
@@ -26,18 +27,31 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> GetHistoryChatAsync(
-    Guid chatId,
-    Guid userId,
-    [FromServices] IChatAiService ai,
-    [FromServices] IAccessorClient accessorClient,
-    [FromServices] ILogger<ChatEndpoint> log,
-    CancellationToken ct)
+        Guid chatId,
+        Guid userId,
+        [FromServices] IChatAiService ai,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<ChatEndpoint> log,
+        CancellationToken ct)
     {
         log.LogInformation("Start method: {Method}, chatId {ChatId}, userId:{UserId}", nameof(GetHistoryChatAsync), chatId, userId);
 
         var snapshot = await accessorClient.GetHistorySnapshotAsync(chatId, userId, ct);
 
-        var payload = HistoryMapper.MapHistoryForFront(snapshot);
+        if (snapshot is null || snapshot?.History.ValueKind == JsonValueKind.Undefined || snapshot?.History.ValueKind == JsonValueKind.Null)
+        {
+            return Results.Ok(new List<object>());
+        }
+
+        var messages = ai.GetFormattedHistory(snapshot!.History);
+
+        var payload = new ChatHistoryForFrontDto
+        {
+            ChatId = snapshot.ThreadId,
+            Name = snapshot.Name,
+            ChatType = snapshot.ChatType,
+            Messages = messages?.OfType<OpenAiMessageDto>().ToList() ?? new List<OpenAiMessageDto>()
+        };
 
         return Results.Ok(payload);
     }

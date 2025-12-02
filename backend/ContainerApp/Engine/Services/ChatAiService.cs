@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Azure.AI.OpenAI;
@@ -43,6 +44,46 @@ public sealed class ChatAiService : IChatAiService
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
         _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
         _chatClient = _azureClient.GetChatClient(_cfg.DeploymentName).AsIChatClient();
+    }
+
+    public IEnumerable<OpenAiMessageDto> GetFormattedHistory(JsonElement historyJson)
+    {
+        if (historyJson.ValueKind == JsonValueKind.Undefined || historyJson.ValueKind == JsonValueKind.Null)
+        {
+            return Enumerable.Empty<OpenAiMessageDto>();
+        }
+
+        var agent = _chatClient.CreateAIAgent(
+            name: "HistoryReader",
+            tools: _tools);
+
+        var thread = agent.DeserializeThread(historyJson);
+
+        var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        var prop = thread.GetType().GetProperty("MessageStore", flags);
+
+        var messages = prop?.GetValue(thread) as IEnumerable<Microsoft.Extensions.AI.ChatMessage>;
+
+        if (messages == null)
+        {
+
+            return Enumerable.Empty<OpenAiMessageDto>();
+        }
+
+        var skippedFirstSystem = false;
+
+        return messages
+            .Where(m =>
+            {
+                if (m.Role == ChatRole.System && !skippedFirstSystem)
+                {
+                    skippedFirstSystem = true;
+                    return false;
+                }
+
+                return true;
+            })
+            .Select(m => m.ToOpenAiDto());
     }
 
     public async Task<ChatAiServiceResponse> ChatHandlerAsync(EngineChatRequest request, HistorySnapshotDto historySnapshot, CancellationToken ct = default)

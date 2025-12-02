@@ -134,24 +134,24 @@ public class EngineClient : IEngineClient
 
         if (chatId == Guid.Empty)
         {
-            throw new ArgumentException("chatId cannot be not Empty.", nameof(chatId));
+            throw new ArgumentException("chatId cannot be Empty.", nameof(chatId));
         }
 
         if (userId == Guid.Empty)
         {
-            throw new ArgumentException("userId cannot be not Empty.", nameof(userId));
+            throw new ArgumentException("userId cannot be Empty.", nameof(userId));
         }
 
         try
         {
-            var responce = await _daprClient.InvokeMethodAsync<GetChatHistoryResponse>(
+            var response = await _daprClient.InvokeMethodAsync<GetChatHistoryResponse>(
                 HttpMethod.Get,
                 "engine",
                 $"chat/{chatId}/{userId}/history",
                 cancellationToken: cancellationToken
             );
 
-            return responce;
+            return response;
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
@@ -160,15 +160,16 @@ public class EngineClient : IEngineClient
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogInformation("{Metod} cancelled for chatId:{ChatId} userId {UserId}", nameof(GetHistoryChatAsync), chatId, userId);
+            _logger.LogInformation("{Metod} cancelled for chatId:{ChatId}", nameof(GetHistoryChatAsync), chatId);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get chats chatId:{ChatId} userId {UserId}", chatId, userId);
+            _logger.LogError(ex, "Failed to get chats chatId:{ChatId}", chatId);
             throw;
         }
     }
+
     public async Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request)
     {
         try

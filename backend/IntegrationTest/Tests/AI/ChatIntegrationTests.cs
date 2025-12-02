@@ -37,8 +37,8 @@ public class ChatIntegrationTests(
         var fallbackTitlePattern = new Regex(@"^\d{4}_\d{2}_\d{2}$");
         fallbackTitlePattern.IsMatch(chatName1).Should().BeFalse($"_chatTitleService.GenerateTitleAsync not work properly. Name was: {chatName1}");
 
-        var history1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, 2, 30);
-        history1.Messages.Count.Should().Be(2);
+        //var history1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, 0, 30); //change after presave
+        //history1.Messages.Count.Should().Be(0);//change after presave
 
         var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, waitMessages: 2, timeoutSeconds: 30);
         chatHistoryAfterRequest1.Messages.Count.Should().Be(2);
@@ -60,7 +60,7 @@ public class ChatIntegrationTests(
         var chatHistoryAfterRequest2 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, waitMessages: 4, timeoutSeconds: 30);
         chatHistoryAfterRequest2.Messages.Count.Should().Be(4);
 
-        var text = chatHistoryAfterRequest2.Messages[^1].Text ?? string.Empty;
+        var text = chatHistoryAfterRequest2.Messages[^1].Content ?? string.Empty;
         text.Should().MatchRegex(regexCheck);
 
         var (req3, ev3, frames3) = await PostChatAndWaitAsync(new ChatRequest
@@ -87,7 +87,7 @@ public class ChatIntegrationTests(
         var delta = (DateTimeOffset.UtcNow - parsed).Duration();
         delta.Should().BeLessThan(TimeSpan.FromSeconds(300), "time should come from TimePlugin/clock");
 
-        frames3.Any(f => f.Stage == ChatStreamStage.Tool && (f.ToolCall ?? string.Empty).Equals("Time-current_time", StringComparison.OrdinalIgnoreCase))
+        frames3.Any(f => f.Stage == ChatStreamStage.Tool && (f.ToolCall ?? string.Empty).Equals("get_current_time", StringComparison.OrdinalIgnoreCase))
                .Should().BeTrue("time tool should be invoked and present in SignalR stream");
     }
 
@@ -135,12 +135,12 @@ public class ChatIntegrationTests(
         history.Messages.Count.Should().Be(3);
 
         var devopsMessage = history.Messages
-            .SingleOrDefault(m => m.Role == "developer");
+            .SingleOrDefault(m => m.Role == "system");
 
         devopsMessage.Should().NotBeNull("pageContext must be stored as DevOps message in history");
-        devopsMessage!.Text.Should().Contain("magicNumber");
-        devopsMessage.Text.Should().Contain("777");
-        devopsMessage.Text.Should().Contain("lesson-123");
+        devopsMessage!.Content.Should().Contain("magicNumber");
+        devopsMessage.Content.Should().Contain("777");
+        devopsMessage.Content.Should().Contain("lesson-123");
 
         var regexMagic = new Regex(@"\b777\b");
 
@@ -154,6 +154,6 @@ public class ChatIntegrationTests(
 
         var lastAssistant = history.Messages.LastOrDefault(m => m.Role == "assistant");
         lastAssistant.Should().NotBeNull();
-        (lastAssistant!.Text ?? string.Empty).Should().MatchRegex(regexMagic);
+        (lastAssistant!.Content ?? string.Empty).Should().MatchRegex(regexMagic);
     }
 }
