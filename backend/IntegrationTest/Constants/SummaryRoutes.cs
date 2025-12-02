@@ -2,7 +2,7 @@ namespace IntegrationTests.Constants;
 
 public static class SummaryRoutes
 {
-    private const string BaseRoute = "period-summary";
+    private const string BaseRoute = "/summaries-manager/summary";
 
     public static string GetPeriodOverview(Guid userId) => $"{BaseRoute}/{userId}/overview";
     public static string GetPeriodGamePractice(Guid userId) => $"{BaseRoute}/{userId}/game-practice";

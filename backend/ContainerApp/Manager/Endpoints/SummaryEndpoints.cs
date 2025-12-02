@@ -12,18 +12,18 @@ public static class SummaryEndpoints
 
     public static IEndpointRouteBuilder MapSummaryEndpoints(this IEndpointRouteBuilder app)
     {
-        var summaryGroup = app.MapGroup("/period-summary").WithTags("Period Summary");
+        var summaryGroup = app.MapGroup("/summaries-manager").WithTags("Period Summary");
 
-        summaryGroup.MapGet("/{userId:guid}/overview", GetPeriodOverviewAsync)
+        summaryGroup.MapGet("summary/{userId:guid}/overview", GetPeriodOverviewAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        summaryGroup.MapGet("/{userId:guid}/game-practice", GetPeriodGamePracticeAsync)
+        summaryGroup.MapGet("summary/{userId:guid}/game-practice", GetPeriodGamePracticeAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        summaryGroup.MapGet("/{userId:guid}/word-cards", GetPeriodWordCardsAsync)
+        summaryGroup.MapGet("summary/{userId:guid}/word-cards", GetPeriodWordCardsAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        summaryGroup.MapGet("/{userId:guid}/achievements", GetPeriodAchievementsAsync)
+        summaryGroup.MapGet("summary/{userId:guid}/achievements", GetPeriodAchievementsAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         return app;
