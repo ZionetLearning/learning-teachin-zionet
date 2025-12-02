@@ -26,6 +26,11 @@ on:
         description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
         default: ""
+      skip_infra_steps:
+        description: "Skip infrastructure steps (Redis, External Secrets, etc.)"
+        type: boolean
+        required: false
+        default: false
       use_keda:
         description: "Enable KEDA setup workflow"
         type: boolean
@@ -136,14 +141,15 @@ jobs:
           fi
 
           # Determine if infrastructure steps should be skipped
-          # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
-          # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [[ "${{ inputs.skip_infra_steps }}" == "false" ]]; then
-            echo "skip_infra_steps=false passed, running infrastructure"
-            echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
-          else
-            echo "Push event detected or manual dispatch update images workflow, skipping infrastructure"
+          # For workflow_dispatch: uses skip_infra_steps input (default: false = run infra)
+          # For workflow_call: uses skip_infra_steps input from caller
+          SKIP_INFRA="${{ inputs.skip_infra_steps || github.event.inputs.skip_infra_steps }}"
+          if [[ "$SKIP_INFRA" == "true" ]]; then
+            echo "skip_infra_steps=true, skipping infrastructure steps"
             echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_infra_steps=false, running infrastructure steps (Redis, External Secrets, etc.)"
+            echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
           fi
 
           # Redis (shared)
