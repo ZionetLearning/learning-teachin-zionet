@@ -61,9 +61,13 @@ echo "======================================"
 echo ""
 
 # Install argocd image updater
-echo "⚙️  Installing ArgoCD Image Updater..."
+echo "Installing ArgoCD Image Updater..."
 helm upgrade --install argocd-image-updater argo/argocd-image-updater \
   --namespace ${ARGOCD_NAMESPACE} \
   --version 0.14.0  \
   -f values-image-updater.yaml \
   --wait
+echo "ArgoCD Image Updater installation complete!"
+echo ""
+
+kubectl apply -f ./applications/applications-template.yaml

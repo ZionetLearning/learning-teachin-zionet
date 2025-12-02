@@ -174,3 +174,49 @@ resource "azurerm_key_vault_secret" "langfuse_secret_key" {
   value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
+
+########################
+# ArgoCD Namespace (if it doesn't exist)
+########################
+resource "kubernetes_namespace" "argocd" {
+  metadata {
+    name = "argocd"
+    labels = {
+      name       = "argocd"
+      managed-by = "terraform"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations,
+      metadata[0].labels,
+    ]
+  }
+}
+
+########################
+# ACR Docker Registry Secret for ArgoCD Image Updater
+########################
+resource "kubernetes_secret" "acr_credentials" {
+  metadata {
+    name      = "acr-credentials"
+    namespace = kubernetes_namespace.argocd.metadata[0].name
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${var.acr_server}" = {
+          username = var.acr_username
+          password = var.acr_password
+          auth     = base64encode("${var.acr_username}:${var.acr_password}")
+        }
+      }
+    })
+  }
+
+  depends_on = [kubernetes_namespace.argocd]
+}
