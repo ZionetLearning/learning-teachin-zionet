@@ -6,5 +6,6 @@ public class UserProgressModel
     public required Guid UserId { get; set; }
     public required PracticeFeature Feature { get; set; }
     public int Count { get; set; }
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

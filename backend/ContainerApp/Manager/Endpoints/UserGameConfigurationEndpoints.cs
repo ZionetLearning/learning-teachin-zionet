@@ -1,15 +1,19 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
 using Microsoft.AspNetCore.Mvc;
-using Manager.Models.UserGameConfiguration;
+using Manager.Models.UserGameConfiguration.Responses;
+using Manager.Mapping;
 using Dapr.Client;
 using Manager.Services.Clients.Accessor.Interfaces;
+using GameName = Manager.Models.UserGameConfiguration.GameName;
+using SaveGameConfigRequest = Manager.Models.UserGameConfiguration.Requests.SaveGameConfigRequest;
 
 namespace Manager.Endpoints;
 
 public static class UserGameConfigurationEndpoints
 {
     private sealed class GameConfigurationEndpoint();
+
     public static IEndpointRouteBuilder MapGameConfigEndpoints(this IEndpointRouteBuilder app)
     {
         var configGroup = app.MapGroup("/game-config-manager").WithTags("Game Configuration");
@@ -45,8 +49,9 @@ public static class UserGameConfigurationEndpoints
                 return Results.Unauthorized();
             }
 
-            var config = await accessorClient.GetUserGameConfigAsync(userId, gameName, ct);
-            return Results.Ok(config);
+            var accessorResponse = await accessorClient.GetUserGameConfigAsync(userId, gameName, ct);
+            var response = accessorResponse.ToApiModel();
+            return Results.Ok(response);
         }
         catch (InvocationException)
         {
@@ -61,7 +66,7 @@ public static class UserGameConfigurationEndpoints
     }
 
     private static async Task<IResult> SaveConfigAsync(
-        [FromBody] UserNewGameConfig userNewGameConfig,
+        [FromBody] SaveGameConfigRequest request,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
@@ -78,12 +83,15 @@ public static class UserGameConfigurationEndpoints
                 return Results.Unauthorized();
             }
 
-            await accessorClient.SaveUserGameConfigAsync(userId, userNewGameConfig, ct);
-            return Results.Ok(new { message = "Configuration saved." });
+            var accessorRequest = request.ToAccessor(userId);
+            await accessorClient.SaveUserGameConfigAsync(accessorRequest, ct);
+
+            var response = new SaveGameConfigResponse { Message = "Configuration saved." };
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error saving game configuration for game {GameName}", userNewGameConfig.GameName);
+            logger.LogError(ex, "Error saving game configuration for game {GameName}", request.GameName);
             return Results.Problem("Failed to save game configuration. Please try again later.");
         }
     }
@@ -107,7 +115,9 @@ public static class UserGameConfigurationEndpoints
             }
 
             await accessorClient.DeleteUserGameConfigAsync(userId, gameName, ct);
-            return Results.Ok(new { message = "Configuration deleted." });
+
+            var response = new DeleteGameConfigResponse { Message = "Configuration deleted." };
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {

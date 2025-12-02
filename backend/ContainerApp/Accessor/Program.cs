@@ -6,6 +6,8 @@ using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Options;
 using Accessor.Services;
+using Accessor.Services.Avatars;
+using Accessor.Services.Avatars.Models;
 using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
@@ -98,6 +100,9 @@ builder.Services.AddOptions<LangfuseOptions>()
     .Bind(builder.Configuration.GetSection("Langfuse"))
     .ValidateOnStart();
 
+builder.Services.AddOptions<AvatarsOptions>()
+    .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
+
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
 {
@@ -145,6 +150,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
 });
+
+builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
 
 var app = builder.Build();
 
