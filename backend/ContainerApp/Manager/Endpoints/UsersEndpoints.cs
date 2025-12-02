@@ -77,7 +77,7 @@ public static class UsersEndpoints
         HttpContext httpContext)
     {
         using var scope = logger.BeginScope("CreateUser:");
-        logger.LogInformation("argocd test first");
+        logger.LogInformation("argocd test first 1");
         try
         {
             // Validate role

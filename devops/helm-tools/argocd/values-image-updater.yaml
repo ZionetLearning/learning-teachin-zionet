@@ -5,8 +5,6 @@ config:
     insecure: true
     plaintext: true
   
-  data:
-    registry.cache-duration: 30s
 
   # Registry configuration
   registries:
