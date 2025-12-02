@@ -19,4 +19,4 @@ config:
   logLevel: debug
   
   # Interval for checking updates (default is 2m)
-  interval: 2m
+  interval: 1m

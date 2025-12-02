@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: zionet-apps-prod
+  name: zionet-apps-test
   namespace: argocd
   annotations:
     # Enable image updater for multiple images
@@ -44,20 +44,20 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values.prod.yaml
+        - values.template.yaml
       parameters:
       - name: global.namePrefix
-        value: prod
+        value: test
       - name: namespace.name
-        value: prod
+        value: test
       - name: namespace.create
         value: "false"
       - name: namePrefix
-        value: prod
+        value: test
       - name: global.dockerRegistry
         value: teachindevacr.azurecr.io
       - name: global.environment
-        value: prod
+        value: test
       - name: langfuse.enabled
         value: "true"
       - name: accessor.secrets.langfuse.enabled
@@ -68,7 +68,7 @@ spec:
         value: "false"
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: prod
+    namespace: test
   syncPolicy:
     automated:
       prune: true

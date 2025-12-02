@@ -70,4 +70,4 @@ helm upgrade --install argocd-image-updater argo/argocd-image-updater \
 echo "ArgoCD Image Updater installation complete!"
 echo ""
 
-kubectl apply -f ./applications/applications-template.yaml
+kubectl apply -f ./applications/applications-prod.yaml
