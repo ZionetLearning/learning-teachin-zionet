@@ -36,6 +36,11 @@ spec:
         argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
         argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
         
+        # CRITICAL: Only allow tags that match the environment
+        argocd-image-updater.argoproj.io/manager.allow-tags: "{{env}}"
+        argocd-image-updater.argoproj.io/accessor.allow-tags: "{{env}}"
+        argocd-image-updater.argoproj.io/engine.allow-tags: "{{env}}"
+
         # Write back method
         argocd-image-updater.argoproj.io/write-back-method: argocd
         
