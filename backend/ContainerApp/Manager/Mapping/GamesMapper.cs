@@ -20,7 +20,7 @@ public static class GamesMapper
         {
             StudentId = studentId,
             ExerciseId = request.ExerciseId,
-            GivenAnswer = request.GivenAnswer
+            GivenAnswer = request.GivenAnswer.ToList()
         };
     }
 
@@ -54,8 +54,24 @@ public static class GamesMapper
     {
         return new GetHistoryResponse
         {
-            Summary = accessorResponse.Summary,
-            Detailed = accessorResponse.Detailed
+            Summary = accessorResponse.Summary != null
+                ? new PagedResult<SummaryHistoryDto>
+                {
+                    Items = accessorResponse.Summary.Items,
+                    Page = accessorResponse.Summary.Page,
+                    PageSize = accessorResponse.Summary.PageSize,
+                    TotalCount = accessorResponse.Summary.TotalCount
+                }
+                : null,
+            Detailed = accessorResponse.Detailed != null
+                ? new PagedResult<AttemptHistoryDto>
+                {
+                    Items = accessorResponse.Detailed.Items,
+                    Page = accessorResponse.Detailed.Page,
+                    PageSize = accessorResponse.Detailed.PageSize,
+                    TotalCount = accessorResponse.Detailed.TotalCount
+                }
+                : null
         };
     }
 

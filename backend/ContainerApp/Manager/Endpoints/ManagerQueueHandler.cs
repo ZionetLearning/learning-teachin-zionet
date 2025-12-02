@@ -210,7 +210,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var response = new SentenceGenerationResponse
             {
                 RequestId = generatedResponse.RequestId,
-                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                Sentences = result.Sentences.Select(r => new GeneratedSentenceResultItem
                 {
                     ExerciseId = r.ExerciseId,
                     Text = r.Text,
@@ -305,7 +305,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var response = new SentenceGenerationResponse
             {
                 RequestId = generatedResponse.RequestId,
-                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                Sentences = result.Sentences.Select(r => new GeneratedSentenceResultItem
                 {
                     ExerciseId = r.ExerciseId,
                     Text = r.Text,
