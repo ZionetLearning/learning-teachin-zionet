@@ -77,3 +77,9 @@ accessor:
 # Langfuse Configuration (dev only)
 langfuse:
   enabled: true
+
+# Redis Configuration for prod
+redis:
+  useAzureRedis: false  # Use self-hosted Redis for cost savings
+  enabled: true
+  password: "prod-redis-password-changeme"  # Will be set by CI/CD

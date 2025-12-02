@@ -84,7 +84,7 @@ jobs:
         run: |
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           echo "🔍 DEBUG: ENVIRONMENT_NAME='$ENVIRONMENT_NAME'"
-          
+
           # Set TARGET_NAMESPACE as both shell variable (for this step) and env variable (for next steps)
           if [ -n "$ENVIRONMENT_NAME" ]; then
             echo "✅ ENVIRONMENT_NAME is not empty, using custom namespace"
@@ -95,7 +95,7 @@ jobs:
           fi
 
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          
+
           # Select values file based on environment
           # dev uses values.dev.yaml (spot disabled for stability)
           # prod uses values.prod.yaml (spot enabled explicitly)
@@ -110,7 +110,7 @@ jobs:
             echo "VALUES_FILE=devops/kubernetes/charts/values.template.yaml" >> $GITHUB_ENV
             echo "📋 Using values.template.yaml (spot enabled for $ENVIRONMENT_NAME)"
           fi
-          
+
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
 
           # Set AKS cluster based on environment
@@ -301,6 +301,15 @@ jobs:
 
           echo "✅ devops-tools namespace is ready"
 
+      - name: Generate Redis password for self-hosted Redis
+        id: redis_password
+        run: |
+          # Generate a secure random password for self-hosted Redis
+          REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+          echo "::add-mask::$REDIS_PASSWORD"
+          echo "REDIS_PASSWORD=$REDIS_PASSWORD" >> $GITHUB_ENV
+          echo "✅ Generated Redis password for environment: $ENVIRONMENT_NAME"
+
       - name: Helm template sanity (no Namespace objects)
         run: |
           # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
@@ -325,6 +334,7 @@ jobs:
             --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
+            --set redis.password="$REDIS_PASSWORD" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda  || false }} \
@@ -346,6 +356,8 @@ jobs:
             LANGFUSE_ENABLED="false"
           fi
 
+          echo "🔧 Deploying with self-hosted Redis on AKS (database index: $REDIS_DATABASE_INDEX)"
+
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$ENVIRONMENT_NAME" \
             -f "$VALUES_FILE" \
@@ -358,6 +370,7 @@ jobs:
             --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
+            --set redis.password="$REDIS_PASSWORD" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda || false }} \
@@ -368,12 +381,12 @@ jobs:
           echo "Deploying Langfuse..."
           cd devops/helm-tools
           chmod +x langfuse.sh
-          
+
           if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
             echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
             exit 1
           fi
-          
+
           ./langfuse.sh \
             "$ENVIRONMENT_NAME" \
             "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \

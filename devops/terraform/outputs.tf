@@ -59,14 +59,16 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
-output "redis_hostname" {
-  value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
-}
-
-output "redis_primary_access_key" {
-  value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
-  sensitive = true
-}
+# COMMENTED OUT: Redis outputs (Using self-hosted Redis on AKS)
+# Uncomment when using Azure Redis Cache
+# output "redis_hostname" {
+#   value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
+# }
+# 
+# output "redis_primary_access_key" {
+#   value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+#   sensitive = true
+# }
 
 output "communication_service_connection_string" {
   value     = var.communication_service_connection_string

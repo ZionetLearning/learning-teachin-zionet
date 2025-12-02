@@ -11,16 +11,16 @@ resource "azurerm_key_vault_secret" "azure_service_bus" {
 # PostgreSQL secret
 ########################
 resource "azurerm_key_vault_secret" "postgres_connection" {
-  name  = "${var.environment_name}-postgres-connection"
+  name = "${var.environment_name}-postgres-connection"
   value = (
     local.use_shared_postgres
     ? format(
-        "Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require",
-        data.azurerm_postgresql_flexible_server.shared[0].fqdn,
-        "${var.database_name}-${var.environment_name}",
-        var.admin_username,
-        var.admin_password
-      )
+      "Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require",
+      data.azurerm_postgresql_flexible_server.shared[0].fqdn,
+      "${var.database_name}-${var.environment_name}",
+      var.admin_username,
+      var.admin_password
+    )
     : module.database[0].postgres_connection_string
   )
   key_vault_id = data.azurerm_key_vault.shared.id
@@ -36,19 +36,20 @@ resource "azurerm_key_vault_secret" "signalr_connection" {
 }
 
 ########################
-# Redis secret
+# COMMENTED OUT: Redis secrets (Using self-hosted Redis on AKS)
+# Uncomment when using Azure Redis Cache
 ########################
-resource "azurerm_key_vault_secret" "redis_hostport" {
-  name         = "${var.environment_name}-redis-hostport"
-  value        = var.use_shared_redis ? "${data.azurerm_redis_cache.shared[0].hostname}:6380" : "${module.redis[0].hostname}:6380"
-  key_vault_id = data.azurerm_key_vault.shared.id
-}
-
-resource "azurerm_key_vault_secret" "redis_password" {
-  name         = "${var.environment_name}-redis-password"
-  value        = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
-  key_vault_id = data.azurerm_key_vault.shared.id
-}
+# resource "azurerm_key_vault_secret" "redis_hostport" {
+#   name         = "${var.environment_name}-redis-hostport"
+#   value        = var.use_shared_redis ? "${data.azurerm_redis_cache.shared[0].hostname}:6380" : "${module.redis[0].hostname}:6380"
+#   key_vault_id = data.azurerm_key_vault.shared.id
+# }
+# 
+# resource "azurerm_key_vault_secret" "redis_password" {
+#   name         = "${var.environment_name}-redis-password"
+#   value        = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+#   key_vault_id = data.azurerm_key_vault.shared.id
+# }
 
 ########################
 # Communication Service secret
@@ -172,7 +173,7 @@ resource "azurerm_key_vault_secret" "langfuse_salt" {
 resource "azurerm_key_vault_secret" "langfuse_redis_password" {
   count        = 1
   name         = "${var.environment_name}-langfuse-redis-password"
-  value        = "redis-password-change-in-production"  # Keeping original for now to minimize changes
+  value        = "redis-password-change-in-production" # Keeping original for now to minimize changes
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 

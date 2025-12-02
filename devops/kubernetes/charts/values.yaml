@@ -283,6 +283,29 @@ dapr:
 # Langfuse Configuration (optional observability tool)
 langfuse:
   enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
+
+# Redis Configuration
+redis:
+  # Set to false to use self-hosted Redis on AKS, true to use Azure Redis Cache
+  useAzureRedis: false
+  
+  # Self-hosted Redis settings (used when useAzureRedis: false)
+  enabled: true
+  password: "changeme"  # Will be overridden by CI/CD with generated password
+  image:
+    repository: redis
+    tag: "6.2"
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
   
 # KEDA scaler (optional)
 keda:

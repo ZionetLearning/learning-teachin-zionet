@@ -194,15 +194,22 @@ variable "frontend_apps" {
   default     = ["student", "teacher", "admin"]
 }
 
-#------------- Redis Variables -------------
+#------------- Redis Variables (COMMENTED OUT - Using Self-Hosted Redis on AKS) -------------
+# NOTE: Redis is now deployed as a self-hosted StatefulSet on AKS for cost optimization (~$17/month savings)
+# To revert to Azure Redis Cache:
+#   1. Uncomment the redis module and data sources in main.tf
+#   2. Uncomment the redis secrets in secrets.tf
+#   3. Set redis.useAzureRedis=true in Helm values files
+#   4. Run terraform apply
+
 variable "redis_name" {
-  description = "Name of the Redis cache instance (for dev/test environments)"
+  description = "Name of the Redis cache instance (for dev/test environments) - NOT USED when self-hosting"
   type        = string
   default     = "redis-teachin-shared"
 }
 
 variable "use_shared_redis" {
-  description = "Use shared Redis instance instead of creating new one"
+  description = "Use shared Redis instance instead of creating new one - NOT USED when self-hosting"
   type        = bool
   default     = true
 }
@@ -210,7 +217,7 @@ variable "use_shared_redis" {
 variable "shared_redis_name" {
   type        = string
   default     = null
-  description = "Name of shared Redis cache, if using shared"
+  description = "Name of shared Redis cache, if using shared - NOT USED when self-hosting"
 }
 
 #------------- Key Vault Variables -------------
