@@ -3,7 +3,8 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.UserGameConfiguration;
-using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Models.Media;
+using Manager.Services.Clients.Accessor.Models.UserGameConfiguration;
 
 namespace Manager.Services.Clients.Accessor.Interfaces;
 
@@ -17,8 +18,8 @@ public interface IAccessorClient
     Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
-    Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
-    Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
-    Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct = default);
+    Task<GetSpeechTokenAccessorResponse> GetSpeechTokenAsync(CancellationToken ct = default);
+    Task<GetGameConfigAccessorResponse> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
+    Task SaveUserGameConfigAsync(SaveGameConfigAccessorRequest request, CancellationToken ct = default);
     Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
 }

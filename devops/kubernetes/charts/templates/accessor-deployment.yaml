@@ -6,7 +6,7 @@ metadata:
   labels:
     {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
 spec:
-  replicas: {{ ternary 0 1 .Values.keda.enabled }}
+  replicas: 1
   selector:
     matchLabels:
       {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
@@ -62,6 +62,13 @@ spec:
                 secretKeyRef:
                   name: communication-service-connection
                   key: CommunicationServiceConnectionString
+            {{- if .Values.accessor.secrets.avatars.enabled }}
+            - name: Avatars__StorageConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.namePrefix }}-{{ .Values.accessor.secrets.avatars.name }}
+                  key: {{ .Values.accessor.secrets.avatars.key }}
+            {{- end }}
             {{- if .Values.accessor.secrets.langfuse.enabled }}
             - name: Langfuse__BaseUrl
               valueFrom:
