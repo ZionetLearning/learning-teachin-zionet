@@ -2,7 +2,7 @@ using System.Net;
 using FluentAssertions;
 using Manager.Endpoints;
 using Manager.Services.Clients.Accessor.Interfaces;
-using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Models.Media;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -36,11 +36,11 @@ public class MediaEndpointsTests
     [Fact]
     public async Task GetSpeechToken_ReturnsOk_WithWrappedToken()
     {
-        var speechTokenResponse = new SpeechTokenResponse { Token = "abc123", Region = "eastus" };
-        
+        var accessorResponse = new GetSpeechTokenAccessorResponse { Token = "abc123", Region = "eastus" };
+
         _accessorClient.Reset();
         _accessorClient.Setup(a => a.GetSpeechTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(speechTokenResponse);
+            .ReturnsAsync(accessorResponse);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(MediaEndpoints),

@@ -30,6 +30,10 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgressMo
             .HasColumnName("count")
             .IsRequired();
 
+        builder.Property(up => up.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
         builder.Property(up => up.UpdatedAt)
             .HasColumnName("updated_at")
             .IsRequired();

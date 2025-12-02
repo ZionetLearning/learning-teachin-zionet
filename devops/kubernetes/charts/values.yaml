@@ -109,10 +109,6 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
-    avatars:
-      enabled: true
-      name: avatars-storage-secret
-      key: AvatarsStorageConnectionString
     jwt:
       name: manager-appsettings
       keys:
@@ -221,6 +217,10 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+    avatars:
+      enabled: true
+      name: avatars-storage-secret
+      key: AvatarsStorageConnectionString
     speech:
       name: accessor-appsettings
       keys:
@@ -283,3 +283,7 @@ dapr:
 # Langfuse Configuration (optional observability tool)
 langfuse:
   enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
+  
+# KEDA scaler (optional)
+keda:
+  enabled: false
