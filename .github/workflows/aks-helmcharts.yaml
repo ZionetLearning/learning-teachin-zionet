@@ -342,23 +342,19 @@ jobs:
         run: |
           echo "🚀 Deploying shared Redis instance to redis namespace..."
 
-          # Use helm template to render only Redis resources, then apply with kubectl
-          # This avoids Helm release ownership conflicts with app resources in other namespaces
+          # Use helm template with --show-only to render ONLY Redis resources
+          # This avoids rendering app deployments and prevents Helm release conflicts
           helm template redis-shared "$CHART_DIR" \
             --namespace redis \
             -f "$VALUES_FILE" \
             --set redis.enabled=true \
             --set redis.useAzureRedis=false \
             --set redis.password="$REDIS_PASSWORD" \
-            --set dapr.installComponents=false \
-            --set manager.enabled=false \
-            --set engine.enabled=false \
-            --set accessor.enabled=false \
-            --set apigateway.enabled=false \
-            --set cronjobs.statsPing.enabled=false \
-            --set cronjobs.refreshSessionsCleanup.enabled=false \
-            --set namespace.create=false \
             --set global.environment="redis" \
+            --show-only templates/redis/redis-secret.yaml \
+            --show-only templates/redis/redis-pvc.yaml \
+            --show-only templates/redis/redis-service.yaml \
+            --show-only templates/redis/redis-statefulset.yaml \
             | kubectl apply -f -
 
           echo "✅ Redis resources applied"
