@@ -19,17 +19,13 @@ spec:
       annotations:
         # Enable image updater for multiple images
         argocd-image-updater.argoproj.io/image-list: >-
-          manager=teachindevacr.azurecr.io/manager,
-          accessor=teachindevacr.azurecr.io/accessor,
-          engine=teachindevacr.azurecr.io/engine
+          manager=teachindevacr.azurecr.io/manager:{{env}},
+          accessor=teachindevacr.azurecr.io/accessor:{{env}},
+          engine=teachindevacr.azurecr.io/engine:{{env}}
         
 
         argocd-image-updater.argoproj.io/image-sort-mode: timestamp
 
-        # Update strategy - use newest-build with tag filter
-        argocd-image-updater.argoproj.io/manager.update-strategy: semver
-        argocd-image-updater.argoproj.io/accessor.update-strategy: semver
-        argocd-image-updater.argoproj.io/engine.update-strategy: semver
               
         # Helm parameter paths
         argocd-image-updater.argoproj.io/manager.helm.image-name: manager.image.repository
@@ -40,9 +36,9 @@ spec:
         argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
         
         # CRITICAL: Only allow tags that match the environment
-        argocd-image-updater.argoproj.io/manager.allow-tags: "regexp:^{{env}}"
-        argocd-image-updater.argoproj.io/accessor.allow-tags: "regexp:^{{env}}"
-        argocd-image-updater.argoproj.io/engine.allow-tags: "regexp:^{{env}}"
+        argocd-image-updater.argoproj.io/manager.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
+        argocd-image-updater.argoproj.io/accessor.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
+        argocd-image-updater.argoproj.io/engine.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
 
 
         
