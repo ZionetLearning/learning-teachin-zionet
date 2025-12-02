@@ -41,6 +41,14 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
                 "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
                 _options.StorageConnectionString?.Length > 20
                     ? _options.StorageConnectionString[..40] + _options.StorageConnectionString[40..] : _options.StorageConnectionString);
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(normConnection!);
+            _log.LogWarning("RAW conn string debug. Len={Len}, bytes={Bytes}",
+                normConnection!.Length,
+                string.Join(" ", bytes.Select(b => b.ToString("X2"))));
+
+            _log.LogWarning("RAW parts:\n{Parts}",
+                string.Join("\n", normConnection.Split(';').Select((p, i) => $"{i}: '{p}'")));
         }
 
         _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
