@@ -14,36 +14,26 @@ spec:
     metadata:
       name: 'zionet-apps-{{env}}'
       annotations:
-        # 1. Image List
+        # 1. Image List - רק רכיבים שצריכים עדכון (Manager הוסר)
         argocd-image-updater.argoproj.io/image-list: >-
-          manager=teachindevacr.azurecr.io/manager,
           accessor=teachindevacr.azurecr.io/accessor,
           engine=teachindevacr.azurecr.io/engine
         
-        # 2. Update strategy - newest-build 
-        argocd-image-updater.argoproj.io/manager.update-strategy: newest-build
+        # 2. Update strategy 
         argocd-image-updater.argoproj.io/accessor.update-strategy: newest-build
         argocd-image-updater.argoproj.io/engine.update-strategy: newest-build
               
         # 3. Allow tags
-        argocd-image-updater.argoproj.io/manager.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
         argocd-image-updater.argoproj.io/accessor.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
         argocd-image-updater.argoproj.io/engine.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
 
-        # 4. Helm parameter paths - שימוש ב-image-spec עבור הבעייתיים
-        
-        # MANAGER - משתמש ב-tag ו-name בנפרד (כיוון שעבד לפני)
-        argocd-image-updater.argoproj.io/manager.helm.image-tag: manager.image.tag 
-        argocd-image-updater.argoproj.io/manager.helm.image-name: manager.image.name
-        
-        # ACCESSOR & ENGINE - שימוש ב-image-spec לכפיית נתיב אחד
+        # 4. Helm parameter paths - שימוש ב-image-spec לכפיית נתיב אחד
         argocd-image-updater.argoproj.io/accessor.helm.image-spec: accessor.image.repository
         argocd-image-updater.argoproj.io/engine.helm.image-spec: engine.image.repository
 
         # 5. Write back method
         argocd-image-updater.argoproj.io/write-back-method: argocd
         # Pull secret
-        argocd-image-updater.argoproj.io/manager.pull-secret: pullsecret:argocd/acr-credentials
         argocd-image-updater.argoproj.io/accessor.pull-secret: pullsecret:argocd/acr-credentials
         argocd-image-updater.argoproj.io/engine.pull-secret: pullsecret:argocd/acr-credentials
     spec:
@@ -78,18 +68,15 @@ spec:
           - name: dapr.installComponents
             value: "false"
 
-          # --- פרמטרים עבור MANAGER (נשארים כפי שהם) ---
-          - name: manager.image.tag
-            value: '{{env}}' 
-          - name: manager.image.name
-            value: manager 
+          # --- פרמטרים של MANAGER הוסרו ---
 
-          # --- פרמטרים עבור ACCESSOR ו-ENGINE (שימוש ב-repository מלא) ---
-          # זה הערך ההתחלתי. ה-A.I.U יחליף את {{env}} בתגית המלאה.
+          # --- כפיית התגית המלאה והעדכנית ביותר (כדי למנוע עדכון חוזר) ---
           - name: accessor.image.repository
-            value: teachindevacr.azurecr.io/accessor:{{env}} 
+            # **שימו לב: תגית מלאה צריכה להיות כאן, החלף אם יש תגית חדשה!**
+            value: teachindevacr.azurecr.io/accessor:featest-e6e9e15 
           - name: engine.image.repository
-            value: teachindevacr.azurecr.io/engine:{{env}}
+            # **שימו לב: תגית מלאה צריכה להיות כאן, החלף אם יש תגית חדשה!**
+            value: teachindevacr.azurecr.io/engine:featest-e6e9e15
             
       destination:
         server: 'https://kubernetes.default.svc'
