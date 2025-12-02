@@ -19,9 +19,9 @@ spec:
       annotations:
         # Enable image updater for multiple images
         argocd-image-updater.argoproj.io/image-list: >-
-          manager=teachindevacr.azurecr.io/manager:{env},
-          accessor=teachindevacr.azurecr.io/accessor:{env},
-          engine=teachindevacr.azurecr.io/engine:{env}
+          manager=teachindevacr.azurecr.io/manager,
+          accessor=teachindevacr.azurecr.io/accessor,
+          engine=teachindevacr.azurecr.io/engine
         
         # Update strategy - use newest-build with tag filter
         argocd-image-updater.argoproj.io/manager.update-strategy: newest-build
@@ -40,6 +40,8 @@ spec:
         argocd-image-updater.argoproj.io/manager.allow-tags: "{{env}}"
         argocd-image-updater.argoproj.io/accessor.allow-tags: "{{env}}"
         argocd-image-updater.argoproj.io/engine.allow-tags: "{{env}}"
+
+        
 
         # Write back method
         argocd-image-updater.argoproj.io/write-back-method: argocd
