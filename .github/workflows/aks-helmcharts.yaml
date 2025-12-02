@@ -342,8 +342,9 @@ jobs:
         run: |
           echo "🚀 Deploying shared Redis instance to redis namespace..."
 
-          # Deploy Redis to the redis namespace (conditional logic in chart ensures it only deploys there)
-          helm upgrade --install redis-shared "$CHART_DIR" \
+          # Use helm template to render only Redis resources, then apply with kubectl
+          # This avoids Helm release ownership conflicts with app resources in other namespaces
+          helm template redis-shared "$CHART_DIR" \
             --namespace redis \
             -f "$VALUES_FILE" \
             --set redis.enabled=true \
@@ -358,13 +359,15 @@ jobs:
             --set cronjobs.refreshSessionsCleanup.enabled=false \
             --set namespace.create=false \
             --set global.environment="redis" \
-            --wait --timeout=5m
+            | kubectl apply -f -
 
-          echo "✅ Shared Redis deployment complete"
+          echo "✅ Redis resources applied"
 
           # Verify Redis pod is running
-          kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=2m || true
+          echo "⏳ Waiting for Redis pod..."
+          kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=3m || true
           kubectl get pods -n redis -l app=redis
+          echo "✅ Shared Redis deployment complete"
 
       - name: Helm template sanity (no Namespace objects)
         run: |
