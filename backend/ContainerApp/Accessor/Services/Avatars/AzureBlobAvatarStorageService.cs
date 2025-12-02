@@ -40,7 +40,7 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
             _log.LogError(ex,
                 "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
                 _options.StorageConnectionString?.Length > 20
-                    ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
+                    ? _options.StorageConnectionString[..40] + _options.StorageConnectionString[40..] : _options.StorageConnectionString);
         }
 
         _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
