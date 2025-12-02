@@ -22,9 +22,9 @@ spec:
     - name: enableTLS
       value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
     {{- else }}
-    # Self-hosted Redis configuration (no TLS, in-cluster)
+    # Self-hosted Redis configuration (no TLS, shared instance)
     - name: redisHost
-      value: "redis.{{ .Release.Namespace }}.svc.cluster.local:6379"
+      value: "{{ .Values.redis.host }}:{{ .Values.redis.port }}"
     - name: redisPassword
       secretKeyRef:
         name: redis-secret

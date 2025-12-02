@@ -1,9 +1,9 @@
-{{- if and .Values.redis.enabled (not .Values.redis.useAzureRedis) }}
+{{- if and .Values.redis.enabled (not .Values.redis.useAzureRedis) (eq .Release.Namespace .Values.redis.namespace) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-pvc
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.redis.namespace }}
 spec:
   accessModes:
     - ReadWriteOnce

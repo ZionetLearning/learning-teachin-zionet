@@ -1,9 +1,9 @@
-{{- if and .Values.redis.enabled (not .Values.redis.useAzureRedis) }}
+{{- if and .Values.redis.enabled (not .Values.redis.useAzureRedis) (eq .Release.Namespace .Values.redis.namespace) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.redis.namespace }}
   labels:
     app: redis
 spec:

@@ -290,7 +290,13 @@ redis:
   useAzureRedis: false
   
   # Self-hosted Redis settings (used when useAzureRedis: false)
-  enabled: true
+  enabled: true  # Set to true only when deploying to redis namespace
+  
+  # Shared Redis configuration
+  namespace: "redis"  # Dedicated namespace for shared Redis instance
+  host: "redis.redis.svc.cluster.local"  # DNS name for shared Redis
+  port: 6379
+  
   password: "changeme"  # Will be overridden by CI/CD with generated password
   image:
     repository: redis

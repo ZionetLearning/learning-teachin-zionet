@@ -189,6 +189,14 @@ jobs:
         run: |
           kubectl create namespace "$ENVIRONMENT_NAME" --dry-run=client -o yaml | kubectl apply -f -
 
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      - name: Create Redis namespace (shared)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "Creating redis namespace for shared Redis instance..."
+          kubectl create namespace redis --dry-run=client -o yaml | kubectl apply -f -
+          echo "✅ redis namespace ready"
+
       - name: Check and fix Helm release status
         run: |
           echo "Checking Helm release status for namespace: $ENVIRONMENT_NAME"
@@ -301,14 +309,56 @@ jobs:
 
           echo "✅ devops-tools namespace is ready"
 
-      - name: Generate Redis password for self-hosted Redis
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      # For Azure Redis: Remove this step and redis password will come from Key Vault via ExternalSecret
+      - name: Generate or retrieve Redis password for self-hosted Redis
         id: redis_password
         run: |
-          # Generate a secure random password for self-hosted Redis
-          REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+          # Check if redis-secret already exists in redis namespace
+          EXISTING_PASSWORD=$(kubectl get secret redis-secret -n redis -o jsonpath='{.data.redis-password}' 2>/dev/null | base64 -d || echo "")
+
+          if [ -n "$EXISTING_PASSWORD" ]; then
+            echo "✅ Using existing Redis password from redis namespace"
+            REDIS_PASSWORD="$EXISTING_PASSWORD"
+          else
+            echo "🔧 Generating new Redis password (first deployment)"
+            REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+          fi
+
           echo "::add-mask::$REDIS_PASSWORD"
           echo "REDIS_PASSWORD=$REDIS_PASSWORD" >> $GITHUB_ENV
-          echo "✅ Generated Redis password for environment: $ENVIRONMENT_NAME"
+          echo "✅ Redis password ready for environment: $ENVIRONMENT_NAME"
+
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      # For Azure Redis: Remove this step, uncomment Terraform redis module in devops/terraform/main.tf
+      - name: Deploy shared Redis instance
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "🚀 Deploying shared Redis instance to redis namespace..."
+
+          # Deploy Redis to the redis namespace (conditional logic in chart ensures it only deploys there)
+          helm upgrade --install redis-shared "$CHART_DIR" \
+            --namespace redis \
+            -f "$VALUES_FILE" \
+            --set redis.enabled=true \
+            --set redis.useAzureRedis=false \
+            --set redis.password="$REDIS_PASSWORD" \
+            --set dapr.installComponents=false \
+            --set manager.enabled=false \
+            --set engine.enabled=false \
+            --set accessor.enabled=false \
+            --set apigateway.enabled=false \
+            --set cronjobs.statsPing.enabled=false \
+            --set cronjobs.refreshSessionsCleanup.enabled=false \
+            --set namespace.create=false \
+            --set global.environment="redis" \
+            --wait --timeout=5m
+
+          echo "✅ Shared Redis deployment complete"
+
+          # Verify Redis pod is running
+          kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=2m || true
+          kubectl get pods -n redis -l app=redis
 
       - name: Helm template sanity (no Namespace objects)
         run: |
@@ -356,6 +406,8 @@ jobs:
             LANGFUSE_ENABLED="false"
           fi
 
+          # For self-hosted Redis: Uses shared instance at redis.redis.svc.cluster.local:6379
+          # To revert to Azure Redis Cache: Set redis.useAzureRedis=true and remove --set redis.password line
           echo "🔧 Deploying with self-hosted Redis on AKS (database index: $REDIS_DATABASE_INDEX)"
 
           helm upgrade --install app "$CHART_DIR" \
