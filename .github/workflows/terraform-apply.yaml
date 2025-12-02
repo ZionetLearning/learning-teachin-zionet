@@ -80,6 +80,9 @@ jobs:
       # PostgreSQL admin credentials - passed securely from GitHub secrets
       TF_VAR_admin_username: ${{ secrets.POSTGRES_USER }}
       TF_VAR_admin_password: ${{ secrets.POSTGRES_PASSWORD }}
+      # ACR credentials
+      TF_VAR_acr_username: ${{ secrets.ACR_USERNAME }}
+      TF_VAR_acr_password: ${{ secrets.ACR_PASSWORD }}
 
     steps:
       - name: Checkout repository
