@@ -67,8 +67,10 @@ vi.mock("@student/api", async (importOriginal) => {
         const expectedAnswer = "שלום";
         const userAnswer = givenAnswer[0] || "";
         const isCorrect = userAnswer === expectedAnswer;
-        const accuracy = isCorrect ? 100 : Math.round((userAnswer.length / expectedAnswer.length) * 100);
-        
+        const accuracy = isCorrect
+          ? 100
+          : Math.round((userAnswer.length / expectedAnswer.length) * 100);
+
         return {
           attemptId: "attempt-123",
           exerciseId: "easy-xyz",
@@ -86,6 +88,8 @@ vi.mock("@student/api", async (importOriginal) => {
 });
 
 export const speakSpy = vi.fn();
+export const trackAchievementSpy = vi.fn();
+
 vi.mock("@student/hooks", () => {
   return {
     useAvatarSpeech: (opts: {
@@ -126,6 +130,9 @@ vi.mock("@student/hooks", () => {
       isLoading: false,
       updateConfig: vi.fn(),
       setConfig: vi.fn(),
+    })),
+    useTrackAchievement: vi.fn(() => ({
+      track: trackAchievementSpy,
     })),
     resetSentenceGameHook: vi.fn(),
     initOnce: vi.fn(),

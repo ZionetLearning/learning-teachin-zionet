@@ -15,4 +15,8 @@ public interface IUsersAccessorClient
     Task<IEnumerable<GetUserAccessorResponse>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
     Task<IEnumerable<GetUserAccessorResponse>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task UpdateUserLanguageAsync(UpdateUserLanguageAccessorRequest request, CancellationToken ct = default);
+    Task<GetUploadAvatarUrlAccessorResponse?> GetAvatarUploadUrlAsync(Guid userId, GetUploadAvatarUrlAccessorRequest request, CancellationToken ct = default);
+    Task<bool> ConfirmAvatarAsync(Guid userId, ConfirmAvatarAccessorRequest request, CancellationToken ct = default);
+    Task<bool> DeleteAvatarAsync(Guid userId, CancellationToken ct = default);
+    Task<string?> GetAvatarReadUrlAsync(Guid userId, CancellationToken ct = default);
 }
