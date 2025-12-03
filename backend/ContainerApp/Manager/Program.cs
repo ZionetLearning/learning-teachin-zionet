@@ -160,6 +160,7 @@ builder.Services.AddScoped<IClassesAccessorClient, ClassesAccessorClient>();
 builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
 builder.Services.AddScoped<IWordCardsAccessorClient, WordCardsAccessorClient>();
 builder.Services.AddScoped<IAchievementAccessorClient, AchievementAccessorClient>();
+builder.Services.AddScoped<IEmailAccessorClient, EmailAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -269,6 +270,7 @@ app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
 app.MapAchievementEndpoints();
 app.MapSummaryEndpoints();
+app.MapEmailEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

@@ -69,4 +69,12 @@ public static class ApiRoutes
 
     public static string GetPeriodAchievementsWithDates(Guid userId, DateTime startDate, DateTime endDate) =>
         $"{BaseRoute}/{userId}/achievements?startDate={startDate:O}&endDate={endDate:O}";
+
+    // -------- Emails --------
+    public const string EmailDraft = "emails-manager/draft";
+    public static string GetEmailRecipients(string name) => $"emails-manager/recipients/{name}";
+
+    public const string SendEmail = "emails-manager/send";
+
+
 }
