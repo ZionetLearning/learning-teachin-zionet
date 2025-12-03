@@ -90,12 +90,12 @@ public class GameAccessorClient : IGameAccessorClient
 
             if (fromDate.HasValue)
             {
-                queryParams.Add($"fromDate={fromDate.Value:O}");
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             if (toDate.HasValue)
             {
-                queryParams.Add($"toDate={toDate.Value:O}");
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             var queryString = string.Join("&", queryParams);
@@ -168,12 +168,12 @@ public class GameAccessorClient : IGameAccessorClient
 
             if (fromDate.HasValue)
             {
-                queryParams.Add($"fromDate={fromDate.Value:O}");
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             if (toDate.HasValue)
             {
-                queryParams.Add($"toDate={toDate.Value:O}");
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             var queryString = string.Join("&", queryParams);

@@ -54,7 +54,7 @@ public static class SummaryEndpoints
 
         try
         {
-            var (start, end) = GetDateRange(startDate, endDate);
+            var (start, end) = GetDateRange(startDate, endDate, logger);
 
             logger.LogInformation("Fetching period overview for UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
                 userId, start, end);
@@ -96,7 +96,7 @@ public static class SummaryEndpoints
 
         try
         {
-            var (start, end) = GetDateRange(startDate, endDate);
+            var (start, end) = GetDateRange(startDate, endDate, logger);
 
             logger.LogInformation("Fetching period game practice for UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
                 userId, start, end);
@@ -138,7 +138,7 @@ public static class SummaryEndpoints
 
         try
         {
-            var (start, end) = GetDateRange(startDate, endDate);
+            var (start, end) = GetDateRange(startDate, endDate, logger);
 
             logger.LogInformation("Fetching period word cards for UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
                 userId, start, end);
@@ -180,7 +180,7 @@ public static class SummaryEndpoints
 
         try
         {
-            var (start, end) = GetDateRange(startDate, endDate);
+            var (start, end) = GetDateRange(startDate, endDate, logger);
 
             logger.LogInformation("Fetching period achievements for UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
                 userId, start, end);
@@ -227,11 +227,51 @@ public static class SummaryEndpoints
         return true;
     }
 
-    private static (DateTime start, DateTime end) GetDateRange(DateTime? startDate, DateTime? endDate)
+    private static (DateTime start, DateTime end) GetDateRange(DateTime? startDate, DateTime? endDate, ILogger? logger = null)
     {
-        var end = endDate ?? DateTime.UtcNow;
-        var start = startDate ?? end.AddDays(-7);
+        var now = DateTime.UtcNow;
 
-        return (start, end);
+        if (!startDate.HasValue && !endDate.HasValue)
+        {
+            logger?.LogDebug("No dates provided, defaulting to last 7 days");
+            return (now.AddDays(-7), now);
+        }
+
+        if (!startDate.HasValue && endDate.HasValue)
+        {
+            var end = endDate.Value > now ? now : endDate.Value;
+            if (endDate.Value > now)
+            {
+                logger?.LogWarning("EndDate {EndDate} is in the future, capping to current time {Now}", endDate.Value, now);
+            }
+
+            return (end.AddDays(-7), end);
+        }
+
+        if (startDate.HasValue && !endDate.HasValue)
+        {
+            if (startDate.Value > now)
+            {
+                logger?.LogWarning("StartDate {StartDate} is in the future, resetting to last 7 days from now", startDate.Value);
+                return (now.AddDays(-7), now);
+            }
+
+            return (startDate.Value, now);
+        }
+
+        var finalEnd = endDate!.Value > now ? now : endDate.Value;
+        var finalStart = startDate!.Value > finalEnd ? finalEnd.AddDays(-7) : startDate.Value;
+
+        if (endDate.Value > now)
+        {
+            logger?.LogWarning("EndDate {EndDate} is in the future, capping to current time {Now}", endDate.Value, now);
+        }
+
+        if (startDate.Value > finalEnd)
+        {
+            logger?.LogWarning("StartDate {StartDate} is after EndDate {EndDate}, adjusting to 7 days before EndDate", startDate.Value, finalEnd);
+        }
+
+        return (finalStart, finalEnd);
     }
 }
