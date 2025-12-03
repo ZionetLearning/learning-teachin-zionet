@@ -268,7 +268,7 @@ public class PeriodSummarizerService : IPeriodSummarizerService
                     CardId = c.CardId,
                     Hebrew = c.Hebrew,
                     English = c.English,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = c.UpdatedAt
                 })
                 .ToList();
 
@@ -279,7 +279,7 @@ public class PeriodSummarizerService : IPeriodSummarizerService
                     CardId = c.CardId,
                     Hebrew = c.Hebrew,
                     English = c.English,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = c.CreatedAt
                 })
                 .ToList();
 

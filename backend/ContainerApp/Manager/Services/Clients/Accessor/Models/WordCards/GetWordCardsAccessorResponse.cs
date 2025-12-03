@@ -18,4 +18,6 @@ public sealed record WordCardAccessorDto
     public required string English { get; init; }
     public required bool IsLearned { get; init; }
     public string? Explanation { get; init; }
+    public required DateTime CreatedAt { get; init; }
+    public required DateTime UpdatedAt { get; init; }
 }
