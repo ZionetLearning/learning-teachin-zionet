@@ -2,6 +2,7 @@ using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using Manager.Models.Summaries;
+using Manager.Models.Summaries.Responses;
 using Manager.Models.Users;
 using System.Data;
 using System.Net.Http.Json;
