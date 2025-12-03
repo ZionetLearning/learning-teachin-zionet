@@ -1,0 +1,147 @@
+﻿using System.Security.Claims;
+using Manager.Constants;
+using Manager.Models.Emails;
+using Manager.Models.ModelValidation;
+using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Services.Clients.Engine;
+using Manager.Services.Clients.Engine.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Manager.Endpoints;
+
+public static class EmailEndpoints
+{
+    private sealed class EmailsEndpoint { }
+
+    public static IEndpointRouteBuilder MapEmailEndpoints(this IEndpointRouteBuilder app)
+    {
+        var emailsGroup = app.MapGroup("/emails-manager").WithTags("Emails");
+
+        emailsGroup.MapGet("/recipients/{name}", GetRecipientEmailsByName)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
+        emailsGroup.MapPost("/draft", CreateEmailDraftAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
+        emailsGroup.MapPost("/send", SendEmailAsync)
+             .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
+        return app;
+    }
+
+    private static async Task<IResult> GetRecipientEmailsByName(
+        [FromServices] IEmailAccessorClient emailAccessorClient,
+        [FromRoute] string name,
+        ILogger<EmailsEndpoint> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("GetRecipientEmailsByName");
+        try
+        {
+            logger.LogInformation("Looking up recipient emails for name={Name}", name);
+
+            var emails = await emailAccessorClient.GetRecipientEmailsByNameAsync(name, ct);
+
+            if (emails.Count == 0)
+            {
+                logger.LogWarning("No emails found for name={Name}", name);
+                return Results.NotFound();
+            }
+
+            return Results.Ok(new { emails });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving recipient email for name={Name}", name);
+            return Results.Problem("Failed to retrieve recipient email.");
+        }
+    }
+
+    private static async Task<IResult> CreateEmailDraftAsync(
+        [FromBody] AiGeneratedEmailRequest request,
+        [FromServices] IEngineClient engineClient,
+        HttpContext http,
+        ILogger<EmailsEndpoint> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("CreateEmailDraftAsync");
+
+        try
+        {
+            logger.LogInformation("Generating AI email draft, Purpose={Purpose}", request.Purpose);
+
+            var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+            {
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiGeneratedEmailRequest), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
+
+            if (!Guid.TryParse(callerIdRaw, out var userId))
+            {
+                logger.LogWarning("Invalid or missing UserId in token: {CallerIdRaw}", callerIdRaw);
+                return Results.Unauthorized();
+            }
+
+            var engineRequest = new EmailDraftRequest
+            {
+                UserId = userId,
+                Subject = request.Subject,
+                Purpose = request.Purpose,
+                Language = request.PreferredLanguageCode
+            };
+
+            var (success, message) = await engineClient.GenerateEmailDraftAsync(engineRequest, ct);
+
+            if (!success)
+            {
+                logger.LogWarning("Failed to send email draft request to Engine: {Message}", message);
+                return Results.Problem("Failed to send email draft request to Engine.");
+            }
+
+            return Results.Ok(new { message = "Email draft generation request sent successfully." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate AI email draft");
+            return Results.Problem("Email draft generation failed.");
+        }
+    }
+
+    private static async Task<IResult> SendEmailAsync(
+        [FromBody] SendEmailRequest request,
+        [FromServices] IEngineClient engineClient,
+        HttpContext http,
+        ILogger<EmailsEndpoint> logger,
+        CancellationToken ct)
+    {
+        if (request == null)
+        {
+            logger.LogWarning("SendEmailRequest is null");
+            return Results.BadRequest(new { error = "Request body cannot be null." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RecipientEmail))
+        {
+            logger.LogWarning("RecipientEmail is null or whitespace");
+            return Results.BadRequest(new { error = "RecipientEmail cannot be null." });
+        }
+
+        using var scope = logger.BeginScope("SendEmailAsync");
+
+        try
+        {
+            logger.LogInformation("Sending email to {RecipientEmail}", request.RecipientEmail);
+
+            await engineClient.SendEmailAsync(request, ct);
+
+            return Results.Ok(new { message = "Email sent successfully." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send email to {RecipientEmail}", request.RecipientEmail);
+            return Results.Problem("Email sending failed.");
+        }
+    }
+}
