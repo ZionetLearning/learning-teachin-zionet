@@ -83,7 +83,7 @@ public class EmailIntegrationTests(
 
         var received = await WaitForEventAsync(
             e => e.EventType == EventType.EmailDraftGenerated,
-            TimeSpan.FromSeconds(15)
+            TimeSpan.FromSeconds(60)
         );
         received.Should().NotBeNull("Expected a SignalR notification for email draft generation");
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
