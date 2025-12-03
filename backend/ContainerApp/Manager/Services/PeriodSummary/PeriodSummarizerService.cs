@@ -5,6 +5,7 @@ using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models.Games;
 using Manager.Services.Clients.Accessor.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models.Achievements;
+using Manager.Models.Summaries.Responses;
 
 namespace Manager.Services.PeriodSummary;
 
@@ -53,9 +54,8 @@ public class PeriodSummarizerService : IPeriodSummarizerService
 
             await Task.WhenAll(historyTask, wordCardsTask, achievementsTask);
 
-            var history = await historyTask;
-            var wordCards = await wordCardsTask;
-            var achievements = await achievementsTask;
+            var (history, wordCards, achievements) = await Task.WhenAll(historyTask, wordCardsTask, achievementsTask)
+                .ContinueWith(t => (historyTask.Result, wordCardsTask.Result, achievementsTask.Result), ct);
 
             var totalAttempts = history.Detailed?.TotalCount ?? 0;
             var wordsLearned = wordCards.WordCards.Count(c => c.IsLearned);
@@ -111,25 +111,20 @@ public class PeriodSummarizerService : IPeriodSummarizerService
             var fromDate = new DateTimeOffset(startDate, TimeSpan.Zero);
             var toDate = new DateTimeOffset(endDate, TimeSpan.Zero);
 
-            // Fetch both history and mistakes data in parallel (Level 1 cache)
             var historyTask = GetOrFetchHistoryAsync(userId, fromDate, toDate, ct);
             var mistakesTask = GetOrFetchMistakesAsync(userId, fromDate, toDate, ct);
 
-            await Task.WhenAll(historyTask, mistakesTask);
-
-            var history = await historyTask;
-            var mistakes = await mistakesTask;
+            var (history, mistakes) = await Task.WhenAll(historyTask, mistakesTask)
+            .ContinueWith(t => (historyTask.Result, mistakesTask.Result), ct);
 
             var attempts = history.Detailed?.Items.ToList() ?? [];
             var mistakesList = mistakes.Items.ToList();
 
-            // Calculate overall summary
             var totalAttempts = attempts.Count;
             var successfulAttempts = attempts.Count(a => a.Status == AttemptStatus.Success);
             var successRate = totalAttempts > 0 ? (decimal)successfulAttempts / totalAttempts : 0;
             var averageAccuracy = attempts.Count > 0 ? attempts.Average(a => a.Accuracy) : 0;
 
-            // Group by game type with mistakes count
             var mistakesByGameType = mistakesList
                 .GroupBy(m => m.GameType.ToString())
                 .ToDictionary(g => g.Key, g => g.Sum(m => m.Mistakes.Count));
@@ -162,7 +157,6 @@ public class PeriodSummarizerService : IPeriodSummarizerService
                 .OrderBy(d => d.Date)
                 .ToList();
 
-            // Mistakes data (only uncorrected exercises)
             var totalUncorrectedMistakes = mistakesList.Sum(m => m.Mistakes.Count);
             var retriedButNotCorrected = mistakesList.Count(m => m.Mistakes.Count > 1);
             var uncorrectedExercises = mistakesList.Count;
@@ -348,8 +342,6 @@ public class PeriodSummarizerService : IPeriodSummarizerService
             throw;
         }
     }
-
-    // ==================== Helper Methods for Level 1 Caching ====================
 
     private async Task<GetHistoryAccessorResponse> GetOrFetchHistoryAsync(Guid userId, DateTimeOffset fromDate, DateTimeOffset toDate, CancellationToken ct)
     {

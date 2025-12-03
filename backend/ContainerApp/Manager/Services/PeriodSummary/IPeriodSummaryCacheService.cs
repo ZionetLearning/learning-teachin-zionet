@@ -1,7 +1,7 @@
-using Manager.Models.Summaries;
 using Manager.Services.Clients.Accessor.Models.Games;
 using Manager.Services.Clients.Accessor.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models.Achievements;
+using Manager.Models.Summaries.Responses;
 
 namespace Manager.Services.PeriodSummary;
 

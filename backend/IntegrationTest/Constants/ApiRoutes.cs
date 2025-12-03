@@ -48,4 +48,25 @@ public static class ApiRoutes
     // -------- User Game Config --------
     public const string GameConfig = "game-config-manager";
     public static string GameConfigByName(GameName gameName) => $"game-config-manager/{gameName}";
+
+    // -------- Summaries --------
+
+    private const string BaseRoute = "/summaries-manager/summary";
+
+    public static string GetPeriodOverview(Guid userId) => $"{BaseRoute}/{userId}/overview";
+    public static string GetPeriodGamePractice(Guid userId) => $"{BaseRoute}/{userId}/game-practice";
+    public static string GetPeriodWordCards(Guid userId) => $"{BaseRoute}/{userId}/word-cards";
+    public static string GetPeriodAchievements(Guid userId) => $"{BaseRoute}/{userId}/achievements";
+
+    public static string GetPeriodOverviewWithDates(Guid userId, DateTime startDate, DateTime endDate) =>
+        $"{BaseRoute}/{userId}/overview?startDate={startDate:O}&endDate={endDate:O}";
+
+    public static string GetPeriodGamePracticeWithDates(Guid userId, DateTime startDate, DateTime endDate) =>
+        $"{BaseRoute}/{userId}/game-practice?startDate={startDate:O}&endDate={endDate:O}";
+
+    public static string GetPeriodWordCardsWithDates(Guid userId, DateTime startDate, DateTime endDate) =>
+        $"{BaseRoute}/{userId}/word-cards?startDate={startDate:O}&endDate={endDate:O}";
+
+    public static string GetPeriodAchievementsWithDates(Guid userId, DateTime startDate, DateTime endDate) =>
+        $"{BaseRoute}/{userId}/achievements?startDate={startDate:O}&endDate={endDate:O}";
 }

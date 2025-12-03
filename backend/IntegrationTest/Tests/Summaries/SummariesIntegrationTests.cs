@@ -227,19 +227,19 @@ public class SummariesIntegrationTests(
         var userId = Guid.NewGuid();
 
         // Act & Assert - Overview
-        var overviewResponse = await Client.GetAsync(SummaryRoutes.GetPeriodOverview(userId));
+        var overviewResponse = await Client.GetAsync(ApiRoutes.GetPeriodOverview(userId));
         overviewResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
         // Act & Assert - Game Practice
-        var gamePracticeResponse = await Client.GetAsync(SummaryRoutes.GetPeriodGamePractice(userId));
+        var gamePracticeResponse = await Client.GetAsync(ApiRoutes.GetPeriodGamePractice(userId));
         gamePracticeResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
         // Act & Assert - Word Cards
-        var wordCardsResponse = await Client.GetAsync(SummaryRoutes.GetPeriodWordCards(userId));
+        var wordCardsResponse = await Client.GetAsync(ApiRoutes.GetPeriodWordCards(userId));
         wordCardsResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
         // Act & Assert - Achievements
-        var achievementsResponse = await Client.GetAsync(SummaryRoutes.GetPeriodAchievements(userId));
+        var achievementsResponse = await Client.GetAsync(ApiRoutes.GetPeriodAchievements(userId));
         achievementsResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -251,19 +251,19 @@ public class SummariesIntegrationTests(
         var emptyUserId = Guid.Empty;
 
         // Act & Assert - Overview
-        var overviewResponse = await Client.GetAsync(SummaryRoutes.GetPeriodOverview(emptyUserId));
+        var overviewResponse = await Client.GetAsync(ApiRoutes.GetPeriodOverview(emptyUserId));
         overviewResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Act & Assert - Game Practice
-        var gamePracticeResponse = await Client.GetAsync(SummaryRoutes.GetPeriodGamePractice(emptyUserId));
+        var gamePracticeResponse = await Client.GetAsync(ApiRoutes.GetPeriodGamePractice(emptyUserId));
         gamePracticeResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Act & Assert - Word Cards
-        var wordCardsResponse = await Client.GetAsync(SummaryRoutes.GetPeriodWordCards(emptyUserId));
+        var wordCardsResponse = await Client.GetAsync(ApiRoutes.GetPeriodWordCards(emptyUserId));
         wordCardsResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         // Act & Assert - Achievements
-        var achievementsResponse = await Client.GetAsync(SummaryRoutes.GetPeriodAchievements(emptyUserId));
+        var achievementsResponse = await Client.GetAsync(ApiRoutes.GetPeriodAchievements(emptyUserId));
         achievementsResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 

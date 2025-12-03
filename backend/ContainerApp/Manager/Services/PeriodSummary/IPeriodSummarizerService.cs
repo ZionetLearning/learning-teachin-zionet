@@ -1,4 +1,4 @@
-using Manager.Models.Summaries;
+using Manager.Models.Summaries.Responses;
 
 namespace Manager.Services.PeriodSummary;
 

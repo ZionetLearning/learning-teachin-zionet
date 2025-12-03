@@ -43,8 +43,8 @@ public abstract class SummariesTestBase(
         DateTime? endDate = null)
     {
         var url = startDate.HasValue && endDate.HasValue
-            ? SummaryRoutes.GetPeriodOverviewWithDates(userId, startDate.Value, endDate.Value)
-            : SummaryRoutes.GetPeriodOverview(userId);
+            ? ApiRoutes.GetPeriodOverviewWithDates(userId, startDate.Value, endDate.Value)
+            : ApiRoutes.GetPeriodOverview(userId);
 
         var response = await Client.GetAsync(url);
 
@@ -64,8 +64,8 @@ public abstract class SummariesTestBase(
         DateTime? endDate = null)
     {
         var url = startDate.HasValue && endDate.HasValue
-            ? SummaryRoutes.GetPeriodGamePracticeWithDates(userId, startDate.Value, endDate.Value)
-            : SummaryRoutes.GetPeriodGamePractice(userId);
+            ? ApiRoutes.GetPeriodGamePracticeWithDates(userId, startDate.Value, endDate.Value)
+            : ApiRoutes.GetPeriodGamePractice(userId);
 
         var response = await Client.GetAsync(url);
 
@@ -85,8 +85,8 @@ public abstract class SummariesTestBase(
         DateTime? endDate = null)
     {
         var url = startDate.HasValue && endDate.HasValue
-            ? SummaryRoutes.GetPeriodWordCardsWithDates(userId, startDate.Value, endDate.Value)
-            : SummaryRoutes.GetPeriodWordCards(userId);
+            ? ApiRoutes.GetPeriodWordCardsWithDates(userId, startDate.Value, endDate.Value)
+            : ApiRoutes.GetPeriodWordCards(userId);
 
         var response = await Client.GetAsync(url);
 
@@ -106,8 +106,8 @@ public abstract class SummariesTestBase(
         DateTime? endDate = null)
     {
         var url = startDate.HasValue && endDate.HasValue
-            ? SummaryRoutes.GetPeriodAchievementsWithDates(userId, startDate.Value, endDate.Value)
-            : SummaryRoutes.GetPeriodAchievements(userId);
+            ? ApiRoutes.GetPeriodAchievementsWithDates(userId, startDate.Value, endDate.Value)
+            : ApiRoutes.GetPeriodAchievements(userId);
 
         var response = await Client.GetAsync(url);
 

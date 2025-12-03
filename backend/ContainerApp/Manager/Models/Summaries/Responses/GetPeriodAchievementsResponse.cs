@@ -1,4 +1,4 @@
-namespace Manager.Models.Summaries;
+namespace Manager.Models.Summaries.Responses;
 
 public sealed class GetPeriodAchievementsResponse
 {
