@@ -20,13 +20,11 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         _options = opt.Value;
         _log = log;
 
-        _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
-
-        var normConnection = _options.StorageConnectionString;
+        var connectionString = _options.StorageConnectionString;
 
         try
         {
-            _svc = new BlobServiceClient(normConnection);
+            _svc = new BlobServiceClient(connectionString);
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
