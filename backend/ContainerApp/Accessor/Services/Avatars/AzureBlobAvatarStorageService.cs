@@ -26,8 +26,7 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         ? _options.StorageConnectionString[^20..]
         : _options.StorageConnectionString);
 
-        var raw = _options.StorageConnectionString;
-        var normConnection = NormalizeConnString(raw);
+        var normConnection = _options.StorageConnectionString;
 
         try
         {
