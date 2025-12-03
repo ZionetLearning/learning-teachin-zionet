@@ -1,3 +1,4 @@
+using Manager.Models;
 using Manager.Models.Games;
 using Manager.Models.Summaries;
 using Manager.Services.Clients.Accessor.Interfaces;
@@ -363,7 +364,60 @@ public class PeriodSummarizerService : IPeriodSummarizerService
         }
 
         _logger.LogDebug("Fetching history from Accessor for UserId={UserId}", userId);
-        var history = await _gameAccessorClient.GetHistoryAsync(userId, summary: false, page: 1, pageSize: int.MaxValue, getPending: false, fromDate, toDate, ct);
+
+        var allItems = new List<AttemptHistoryDto>();
+        var currentPage = 1;
+        const int pageSize = 100;
+        var totalCount = 0;
+
+        while (true)
+        {
+            var pageResult = await _gameAccessorClient.GetHistoryAsync(
+                userId,
+                summary: false,
+                page: currentPage,
+                pageSize: pageSize,
+                getPending: false,
+                fromDate,
+                toDate,
+                ct);
+
+            if (pageResult.Detailed?.Items != null)
+            {
+                allItems.AddRange(pageResult.Detailed.Items);
+                totalCount = pageResult.Detailed.TotalCount;
+
+                _logger.LogDebug(
+                    "Fetched page {Page} of history for UserId={UserId}. Items={Count}, TotalCount={Total}",
+                    currentPage, userId, pageResult.Detailed.Items.Count, totalCount);
+
+                if (!pageResult.Detailed.HasNextPage)
+                {
+                    break;
+                }
+
+                currentPage++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        var history = new GetHistoryAccessorResponse
+        {
+            Detailed = new PagedResult<AttemptHistoryDto>
+            {
+                Items = allItems,
+                Page = 1,
+                PageSize = allItems.Count,
+                TotalCount = totalCount
+            }
+        };
+
+        _logger.LogInformation(
+            "Fetched complete history for UserId={UserId}. TotalItems={Count}, TotalPages={Pages}",
+            userId, allItems.Count, currentPage);
 
         await _cacheService.CacheHistoryAsync(userId, startDate, endDate, history, ct);
 
@@ -417,7 +471,56 @@ public class PeriodSummarizerService : IPeriodSummarizerService
         }
 
         _logger.LogDebug("Fetching mistakes from Accessor for UserId={UserId}", userId);
-        var mistakes = await _gameAccessorClient.GetMistakesAsync(userId, page: 1, pageSize: int.MaxValue, fromDate, toDate, ct);
+
+        var allItems = new List<ExerciseMistakes>();
+        var currentPage = 1;
+        const int pageSize = 100;
+        var totalCount = 0;
+
+        while (true)
+        {
+            var pageResult = await _gameAccessorClient.GetMistakesAsync(
+                userId,
+                page: currentPage,
+                pageSize: pageSize,
+                fromDate,
+                toDate,
+                ct);
+
+            if (pageResult.Items != null)
+            {
+                allItems.AddRange(pageResult.Items);
+                totalCount = pageResult.TotalCount;
+
+                _logger.LogDebug(
+                    "Fetched page {Page} of mistakes for UserId={UserId}. Items={Count}, TotalCount={Total}",
+                    currentPage, userId, pageResult.Items.Count, totalCount);
+
+                if (!pageResult.HasNextPage)
+                {
+                    break;
+                }
+
+                currentPage++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        var mistakes = new GetMistakesAccessorResponse
+        {
+            Items = allItems,
+            Page = 1,
+            PageSize = allItems.Count,
+            TotalCount = totalCount,
+            HasNextPage = false
+        };
+
+        _logger.LogInformation(
+            "Fetched complete mistakes for UserId={UserId}. TotalItems={Count}, TotalPages={Pages}",
+            userId, allItems.Count, currentPage);
 
         await _cacheService.CacheMistakesAsync(userId, startDate, endDate, mistakes, ct);
 
