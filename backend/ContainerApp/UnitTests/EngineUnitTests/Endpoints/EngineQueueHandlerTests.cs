@@ -54,6 +54,7 @@ public class EngineQueueHandlerTests
         var log = new Mock<ILogger<EngineQueueHandler>>();
         var batcherLog = new Mock<ILogger<StreamingChatAIBatcher>>();
         var explainService = new Mock<IWordExplainService>(MockBehavior.Strict);
+        var emailService = new Mock<IEmailService>(MockBehavior.Strict);
 
         var sut = new EngineQueueHandler(
             dapr.Object,
@@ -64,8 +65,8 @@ public class EngineQueueHandlerTests
             accessorClient.Object,
             sentService.Object,
             titleService.Object,
-            explainService.Object
-        );
+            explainService.Object,
+            emailService.Object);
         return (dapr, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut);
     }
 

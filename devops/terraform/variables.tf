@@ -111,6 +111,42 @@ variable "tavily_api_key" {
   default     = null
 }
 
+# brevo
+variable "brevo_address" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing API address"
+  default     = null
+}
+
+variable "brevo_host" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP host"
+  default     = null
+}
+
+variable "brevo_port" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP port"
+  default     = null
+}
+
+variable "brevo_username" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP username"
+  default     = null
+}
+
+variable "brevo_password" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP password"
+  default     = null
+}
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
