@@ -30,6 +30,22 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
 
         try
         {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(_options.StorageConnectionString!);
+
+            _log.LogWarning("RAW conn string debug. Len={Len}, bytes={Bytes}",
+_options.StorageConnectionString!.Length,
+string.Join(" ", bytes.Select(b => b.ToString("X2"))));
+
+            _log.LogWarning("RAW parts:\n{Parts}",
+                string.Join("\n", _options.StorageConnectionString.Split(';').Select((p, i) => $"{i}: '{p}'")));
+        }
+        catch (Exception ex2)
+        {
+            _log.LogError(ex2, "Failed to log raw conn string debug info.");
+        }
+
+        try
+        {
             _svc = new BlobServiceClient(normConnection);
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
@@ -40,7 +56,7 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
             _log.LogError(ex,
                 "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
                 _options.StorageConnectionString?.Length > 20
-                    ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
+                    ? _options.StorageConnectionString[..40] + _options.StorageConnectionString[40..] : _options.StorageConnectionString);
         }
 
         _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
