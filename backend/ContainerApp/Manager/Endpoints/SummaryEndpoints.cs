@@ -8,7 +8,7 @@ namespace Manager.Endpoints;
 
 public static class SummaryEndpoints
 {
-    private sealed class WeeklySummaryEndpoint { }
+    private sealed class SummaryEndpoint { }
 
     public static IEndpointRouteBuilder MapSummaryEndpoints(this IEndpointRouteBuilder app)
     {
@@ -35,7 +35,7 @@ public static class SummaryEndpoints
         [FromQuery] DateTime? endDate,
         [FromServices] IPeriodSummarizerService periodSummaryService,
         HttpContext http,
-        ILogger<WeeklySummaryEndpoint> logger,
+        ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("GetPeriodOverviewAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
@@ -77,7 +77,7 @@ public static class SummaryEndpoints
         [FromQuery] DateTime? endDate,
         [FromServices] IPeriodSummarizerService periodSummaryService,
         HttpContext http,
-        ILogger<WeeklySummaryEndpoint> logger,
+        ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("GetPeriodGamePracticeAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
@@ -119,7 +119,7 @@ public static class SummaryEndpoints
         [FromQuery] DateTime? endDate,
         [FromServices] IPeriodSummarizerService periodSummaryService,
         HttpContext http,
-        ILogger<WeeklySummaryEndpoint> logger,
+        ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("GetPeriodWordCardsAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
@@ -161,7 +161,7 @@ public static class SummaryEndpoints
         [FromQuery] DateTime? endDate,
         [FromServices] IPeriodSummarizerService periodSummaryService,
         HttpContext http,
-        ILogger<WeeklySummaryEndpoint> logger,
+        ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("GetPeriodAchievementsAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",

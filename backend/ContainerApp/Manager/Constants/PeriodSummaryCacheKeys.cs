@@ -11,10 +11,8 @@ public static class PeriodSummaryCacheKeys
 
     private const string OverviewPattern = "period-summary:overview:{0}:{1}:{2}";
     private const string GamePracticePattern = "period-summary:game-practice:{0}:{1}:{2}";
-    private const string MistakesSummaryPattern = "period-summary:mistakes:{0}:{1}:{2}";
     private const string WordCardsSummaryPattern = "period-summary:word-cards:{0}:{1}:{2}";
     private const string AchievementsSummaryPattern = "period-summary:achievements:{0}:{1}:{2}";
-    private const string ProgressPattern = "period-summary:progress:{0}:{1}:{2}";
 
     // Level 1: Raw Accessor cache keys
     public static string History(Guid userId, DateTime startDate, DateTime endDate) =>
@@ -38,17 +36,11 @@ public static class PeriodSummaryCacheKeys
     public static string GamePractice(Guid userId, DateTime startDate, DateTime endDate) =>
         string.Format(GamePracticePattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
-    public static string MistakesSummary(Guid userId, DateTime startDate, DateTime endDate) =>
-        string.Format(MistakesSummaryPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
-
     public static string WordCardsSummary(Guid userId, DateTime startDate, DateTime endDate) =>
         string.Format(WordCardsSummaryPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
     public static string AchievementsSummary(Guid userId, DateTime startDate, DateTime endDate) =>
         string.Format(AchievementsSummaryPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
-
-    public static string Progress(Guid userId, DateTime startDate, DateTime endDate) =>
-        string.Format(ProgressPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
     // TTL for cache entries
     public const int DefaultTtlSeconds = 600; // 10 minutes
