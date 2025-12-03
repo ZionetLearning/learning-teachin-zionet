@@ -79,6 +79,44 @@ resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
 }
 
 ########################
+# Brevo Mailing API Key secret - Global/Shared for all environments (dev environment only)
+########################
+resource "azurerm_key_vault_secret" "brevo_address" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "brevo-address"
+  value        = var.brevo_address
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "brevo_host" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "brevo-host"
+  value        = var.brevo_host
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "brevo_port" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "brevo-port"
+  value        = var.brevo_port
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "brevo_username" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "brevo-username"
+  value        = var.brevo_username
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "brevo_password" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "brevo-password"
+  value        = var.brevo_password
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
 # Langfuse secrets (always create, controlled by Helm values)
 ########################
 resource "azurerm_key_vault_secret" "langfuse_db_username" {
