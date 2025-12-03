@@ -7,9 +7,9 @@ spec:
   generators:
   - list:
       elements:
-      - env: featest
-        targetNamespace: featest
-        createNamespace: "true"
+      # - env: featest
+      #   targetNamespace: featest
+      #   createNamespace: "true"
   template:
     metadata:
       name: 'zionet-apps-{{env}}'
