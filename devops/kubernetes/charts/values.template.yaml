@@ -76,4 +76,4 @@ accessor:
 
 # Langfuse Configuration (dev only)
 langfuse:
-  enabled: true
+  enabled: false

@@ -44,23 +44,23 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values.prod.yaml
+        - values.template.yaml
       parameters:
       - name: global.namePrefix
-        value: prod
+        value: test
       - name: namespace.name
-        value: prod
+        value: test
       - name: global.dockerRegistry
         value: teachindevacr.azurecr.io
       - name: global.environment
-        value: prod
+        value: test
       - name: dapr.stateStore.redis.redisDB
-        value: "1"
+        value: "2"
       - name: keda.enabled
-        value: "true"
+        value: "false"
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: prod
+    namespace: test
   syncPolicy:
     automated:
       prune: true

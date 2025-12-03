@@ -22,15 +22,6 @@ on:
         description: "Optional namespace/prefix (lowercase letters & digits). Empty -> dev"
         required: false
         default: ""
-      image_tag:
-        description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
-        required: false
-        default: ""
-      use_keda:
-        description: "Enable KEDA setup workflow"
-        type: boolean
-        required: false
-        default: true
 
   workflow_call:
     inputs:
@@ -40,15 +31,7 @@ on:
       environment_name:
         required: false
         type: string
-      image_tag:
-        required: false
-        type: string
-        description: "Docker image tag to deploy (e.g., commit hash)"
       skip_infra_steps:
-        required: false
-        type: boolean
-        default: false
-      use_keda:
         required: false
         type: boolean
         default: false
@@ -132,40 +115,8 @@ jobs:
             echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
           fi
 
-          # Redis (shared)
-          case "$ENVIRONMENT_NAME" in
-            dev)
-              echo "REDIS_DATABASE_INDEX=0" >> $GITHUB_ENV
-              ;;
-            prod)
-              echo "REDIS_DATABASE_INDEX=1" >> $GITHUB_ENV
-              ;;
-            test)
-              echo "REDIS_DATABASE_INDEX=2" >> $GITHUB_ENV
-              ;;
-            featest)
-              echo "REDIS_DATABASE_INDEX=3" >> $GITHUB_ENV
-              ;;
-            featest2)
-              echo "REDIS_DATABASE_INDEX=4" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "REDIS_DATABASE_INDEX=5" >> $GITHUB_ENV
-              echo "ENVIRONMENT_NAME is $ENVIRONMENT_NAME"
-              ;;
-          esac
+          
 
-          # Determine if Langfuse should be deployed (only for dev environment)
-          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
-            echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
-            echo "deploy_langfuse=true"
-          else
-            echo "deploy_langfuse=false" >> $GITHUB_OUTPUT
-            echo "deploy_langfuse=false"
-          fi
-
-          # Langfuse secrets should be available in all environments
-          echo "langfuse_secrets_enabled=true" >> $GITHUB_OUTPUT
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -287,64 +238,6 @@ jobs:
 
           echo "✅ devops-tools namespace is ready"
 
-      - name: Helm template sanity (no Namespace objects)
-        run: |
-          # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
-          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
-          if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="$ENVIRONMENT_NAME"
-          fi
-
-          # Prepare Langfuse setting based on environment
-          LANGFUSE_ENABLED="true"
-          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
-            LANGFUSE_ENABLED="false"
-          fi
-
-          helm template app "$CHART_DIR" -f "$VALUES_FILE" \
-            --set namespace.name="$ENVIRONMENT_NAME" \
-            --set namespace.create=false \
-            --set global.namePrefix="$ENVIRONMENT_NAME" \
-            --set namePrefix="$ENVIRONMENT_NAME" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
-            --set langfuse.enabled="$LANGFUSE_ENABLED" \
-            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
-            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
-            --set dapr.installComponents=false \
-            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda  || false }} \
-          | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
-
-      - name: Helm upgrade/install app
-        run: |
-          # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
-          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
-          if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="$ENVIRONMENT_NAME"
-          fi
-
-          # Prepare Langfuse setting based on environment
-          # langfuse.enabled controls if Langfuse app is deployed (only dev)
-          # accessor.secrets.langfuse.enabled controls if accessor gets Langfuse secrets (all envs)
-          LANGFUSE_ENABLED="true"
-          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
-            LANGFUSE_ENABLED="false"
-          fi
-
-          helm upgrade --install app "$CHART_DIR" \
-            --namespace "$ENVIRONMENT_NAME" \
-            -f "$VALUES_FILE" \
-            --set namespace.name="$ENVIRONMENT_NAME" \
-            --set namespace.create=false \
-            --set global.namePrefix="$ENVIRONMENT_NAME" \
-            --set namePrefix="$ENVIRONMENT_NAME" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
-            --set langfuse.enabled="$LANGFUSE_ENABLED" \
-            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
-            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
-            --set dapr.installComponents=false \
-            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda || false }} \
 
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'

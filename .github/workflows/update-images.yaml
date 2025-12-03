@@ -33,11 +33,6 @@ on:
         description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
         required: false
         type: string
-      use_keda:
-        description: 'Enable KEDA setup workflow'
-        type: boolean
-        required: false
-        default: true
       unlock_featest:
         description: 'Set to true to only unlock featest environment (skips deployment)'
         required: false
@@ -52,10 +47,6 @@ on:
         required: false
         type: string
         default: ''
-      use_keda:
-        required: false
-        type: boolean
-        default: false
         
 jobs:
   lock-featest:
@@ -113,19 +104,4 @@ jobs:
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
-    secrets: inherit
-
-  helm-deploy:
-    needs: [set-defaults, build-and-push-images]
-    if: |
-      always() &&
-      needs.set-defaults.result == 'success' &&
-      needs.build-and-push-images.result == 'success'
-    uses: ./.github/workflows/aks-helmcharts.yaml
-    with:
-      environment: ${{ needs.set-defaults.outputs.environment }}
-      environment_name: ${{ needs.set-defaults.outputs.environment_name }}
-      image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
-      skip_infra_steps: true
-      use_keda: ${{ github.event_name == 'push' && true || fromJson(github.event.inputs.use_keda || inputs.use_keda || 'false') }}
     secrets: inherit
