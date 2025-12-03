@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
 using Manager.Models.Emails;
-using Manager.Models.Games;
 using Manager.Models.ModelValidation;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
