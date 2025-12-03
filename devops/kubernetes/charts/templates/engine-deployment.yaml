@@ -88,27 +88,27 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.engine.secrets.app.name }}
-                  key: brevoAddress 
+                  key: {{ .Values.engine.secrets.app.keys.brevoAddress }}
             - name: BrevoMailing__Host
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.engine.secrets.app.name }}
-                  key: brevoHost
+                  key: {{ .Values.engine.secrets.app.keys.brevoHost }}
             - name: BrevoMailing__Port
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.engine.secrets.app.name }}
-                  key: brevoPort
+                  key: {{ .Values.engine.secrets.app.keys.brevoPort }}
             - name: BrevoMailing__Username
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.engine.secrets.app.name }}
-                  key: brevoUsername
+                  key: {{ .Values.engine.secrets.app.keys.brevoUsername }}
             - name: BrevoMailing__Password
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.engine.secrets.app.name }}
-                  key: brevoPassword
+                  key: {{ .Values.engine.secrets.app.keys.brevoPassword }}
           resources:
             {{- toYaml .Values.engine.resources | nindent 12 }}
 ---
