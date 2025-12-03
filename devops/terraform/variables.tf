@@ -111,6 +111,14 @@ variable "tavily_api_key" {
   default     = null
 }
 
+# brevo_api_key
+variable "brevo_api_key" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing API key"
+  default     = null
+}
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
