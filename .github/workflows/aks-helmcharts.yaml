@@ -365,6 +365,20 @@ jobs:
           kubectl get pods -n redis -l app=redis
           echo "✅ Shared Redis deployment complete"
 
+      # CRITICAL: Copy Redis secret to target namespace for Dapr components
+      - name: Create Redis secret in target namespace
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "📝 Creating redis-secret in $ENVIRONMENT_NAME namespace..."
+
+          # Create secret with the same password used for Redis deployment
+          kubectl create secret generic redis-secret \
+            --from-literal=redis-password="$REDIS_PASSWORD" \
+            --namespace="$ENVIRONMENT_NAME" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "✅ redis-secret created in $ENVIRONMENT_NAME namespace"
+
       - name: Helm template sanity (no Namespace objects)
         run: |
           # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
@@ -432,28 +446,28 @@ jobs:
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda || false }} \
 
-      - name: Add Langfuse
-        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
-        run: |
-          echo "Deploying Langfuse..."
-          cd devops/helm-tools
-          chmod +x langfuse.sh
+      # - name: Add Langfuse
+      #   if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
+      #   run: |
+      #     echo "Deploying Langfuse..."
+      #     cd devops/helm-tools
+      #     chmod +x langfuse.sh
 
-          if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
-            echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
-            exit 1
-          fi
+      #     if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
+      #       echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
+      #       exit 1
+      #     fi
 
-          ./langfuse.sh \
-            "$ENVIRONMENT_NAME" \
-            "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
-            "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
-            "${{ secrets.POSTGRES_USER }}" \
-            "${{ secrets.POSTGRES_PASSWORD }}" \
-            "${{ secrets.SMTP_USER }}" \
-            "${{ secrets.SMTP_PASSWORD }}"
+      #     ./langfuse.sh \
+      #       "$ENVIRONMENT_NAME" \
+      #       "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
+      #       "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
+      #       "${{ secrets.POSTGRES_USER }}" \
+      #       "${{ secrets.POSTGRES_PASSWORD }}" \
+      #       "${{ secrets.SMTP_USER }}" \
+      #       "${{ secrets.SMTP_PASSWORD }}"
 
-          echo "Langfuse deployment completed"
+      #     echo "Langfuse deployment completed"
 
       - name: Diagnostics (on failure)
         if: failure()
