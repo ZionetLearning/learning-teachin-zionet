@@ -19,3 +19,4 @@ export * from "./PracticeHistoryPage";
 export * from "./WordCardsPage";
 export * from "./WordCardsChallengePage";
 export * from "./ClassesPage";
+export * from "./SummaryPage";
