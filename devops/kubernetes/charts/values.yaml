@@ -304,14 +304,14 @@ redis:
     pullPolicy: IfNotPresent
   persistence:
     enabled: true
-    size: 8Gi
+    size: 4Gi
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"      # Reduced based on actual usage (~0.0016 cores observed)
+      memory: "50Mi"  # Reduced based on actual usage (~2.45 MiB observed, 50Mi gives 20x headroom)
     limits:
-      cpu: "500m"
-      memory: "512Mi"
+      cpu: "100m"     # Reduced from 500m, still plenty of headroom
+      memory: "256Mi" # Reduced from 512Mi, still 100x actual usage
   
 # KEDA scaler (optional)
 keda:

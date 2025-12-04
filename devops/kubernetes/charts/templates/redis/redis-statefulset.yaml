@@ -33,12 +33,7 @@ spec:
             - "--requirepass"
             - "$(REDIS_PASSWORD)"
           resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
+            {{- toYaml .Values.redis.resources | nindent 12 }}
           volumeMounts:
             - name: redis-data
               mountPath: /data
