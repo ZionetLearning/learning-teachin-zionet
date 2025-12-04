@@ -16,5 +16,7 @@ public enum EventType
     TaskUpdate,
     SentenceGeneration,
     SplitSentenceGeneration,
-    WordExplain
+    WordExplain,
+    AchievementUnlocked,
+    EmailDraftGenerated,
 }

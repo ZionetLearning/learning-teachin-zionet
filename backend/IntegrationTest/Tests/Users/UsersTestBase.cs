@@ -27,7 +27,7 @@ public abstract class UsersTestBase(
     /// Creates a user (default role: student) and logs them in.
     /// Returns UserData for the created user.
     /// </summary>
-    protected async Task<UserData> CreateUserAsync(
+    protected async Task<GetUserResponse> CreateUserAsync(
         string role = "student",
         string? email = null,
         string? acceptLanguage = "en-US")
@@ -60,7 +60,7 @@ public abstract class UsersTestBase(
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
 
-        return new UserData
+        return new GetUserResponse
         {
             UserId = user.UserId,
             Email = user.Email,
@@ -77,7 +77,7 @@ public abstract class UsersTestBase(
     /// Clears any existing authorization before login.
     /// Returns UserData for the created user.
     /// </summary>
-    protected async Task<UserData> CreateAndLoginAsync(Role role, string? email = null)
+    protected async Task<GetUserResponse> CreateAndLoginAsync(Role role, string? email = null)
     {
         email ??= $"{role.ToString().ToLower()}-{Guid.NewGuid():N}@example.com";
 
@@ -109,7 +109,7 @@ public abstract class UsersTestBase(
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
 
-        return new UserData
+        return new GetUserResponse
         {
             UserId = user.UserId,
             Email = user.Email,

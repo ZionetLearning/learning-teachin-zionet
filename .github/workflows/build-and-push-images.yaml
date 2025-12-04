@@ -9,9 +9,6 @@ on:
       environment_name:
         required: true
         type: string
-      list_services_names:
-        required: true
-        type: string
     outputs:
       image_tag:
         description: "The generated image tag (commit hash)"

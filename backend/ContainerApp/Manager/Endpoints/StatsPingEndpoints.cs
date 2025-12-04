@@ -1,7 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

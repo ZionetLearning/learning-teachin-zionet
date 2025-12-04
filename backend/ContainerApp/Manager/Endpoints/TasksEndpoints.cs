@@ -1,7 +1,10 @@
 ﻿using Manager.Constants;
+using Manager.Mapping;
 using Manager.Models;
 using Manager.Models.ModelValidation;
-using Manager.Services.Clients.Accessor;
+using Manager.Models.Tasks.Requests;
+using Manager.Models.Tasks.Responses;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,7 +30,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
         HttpResponse response)
     {
@@ -41,17 +44,18 @@ public static class TasksEndpoints
 
         try
         {
-            var (task, etag) = await accessorClient.GetTaskWithEtagAsync(id);
+            var (accessorTask, etag) = await taskAccessorClient.GetTaskWithEtagAsync(id);
 
-            if (task is not null)
+            if (accessorTask is not null)
             {
                 if (!string.IsNullOrWhiteSpace(etag))
                 {
                     response.Headers.ETag = $"\"{etag}\"";
                 }
 
+                var taskResponse = accessorTask.ToApiModel();
                 logger.LogInformation("Successfully retrieved task (ETag forwarded).");
-                return Results.Ok(task);
+                return Results.Ok(taskResponse);
             }
 
             logger.LogWarning("Task not found");
@@ -65,43 +69,33 @@ public static class TasksEndpoints
     }
 
     private static async Task<IResult> CreateTaskAsync(
-        [FromBody] TaskModel task,
-        [FromServices] IAccessorClient accessorClient,
+        [FromBody] CreateTaskRequest request,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
-        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
+        using var scope = logger.BeginScope("TaskId {TaskId}:", request.Id);
 
-        if (!ValidationExtensions.TryValidate(task, out var validationErrors))
+        if (!ValidationExtensions.TryValidate(request, out var validationErrors))
         {
-            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
+            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(CreateTaskRequest), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
-        }
-
-        if (string.IsNullOrWhiteSpace(task.Name))
-        {
-            logger.LogWarning("Task {TaskId} has invalid name", task.Id);
-            return Results.BadRequest("Task name is required");
-        }
-
-        if (string.IsNullOrWhiteSpace(task.Payload))
-        {
-            logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
-            return Results.BadRequest("Task payload is required");
         }
 
         try
         {
-            logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await accessorClient.PostTaskAsync(task);
+            logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", request.Id, request.Name);
+            var accessorRequest = request.ToAccessor();
+            var accessorResult = await taskAccessorClient.PostTaskAsync(accessorRequest);
 
-            if (result.success)
+            if (accessorResult.Success)
             {
-                logger.LogInformation("Task {TaskId} successfully posted", task.Id);
-                return Results.Accepted($"/tasks-manager/task/{task.Id}", new { status = result.message, task.Id });
+                var response = accessorResult.ToApiModel();
+                logger.LogInformation("Task {TaskId} successfully posted", request.Id);
+                return Results.Accepted($"/tasks-manager/task/{request.Id}", response);
             }
 
-            logger.LogWarning("Task {TaskId} failed: {Message}", task.Id, result.message);
-            return Results.Problem(result.message);
+            logger.LogWarning("Task {TaskId} failed: {Message}", request.Id, accessorResult.Message);
+            return Results.Problem(accessorResult.Message);
         }
         catch (Exception ex)
         {
@@ -134,15 +128,16 @@ public static class TasksEndpoints
     }
 
     private static async Task<IResult> GetTasksAsync(
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("List all tasks");
         try
         {
-            var items = await accessorClient.GetTaskSummariesAsync();
-            logger.LogInformation("Retrieved {Count} tasks", items?.Count ?? 0);
-            return Results.Ok(items);
+            var accessorResult = await taskAccessorClient.GetTasksAsync();
+            var response = accessorResult.ToApiModel();
+            logger.LogInformation("Retrieved {Count} tasks", response.Count);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -150,11 +145,12 @@ public static class TasksEndpoints
             return Results.Problem("An error occurred while retrieving tasks.");
         }
     }
+
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
         [FromHeader(Name = "If-Match")] string? ifMatch,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
         HttpResponse response)
     {
@@ -168,14 +164,8 @@ public static class TasksEndpoints
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            logger.LogWarning("Invalid task name");
-            return Results.BadRequest("Invalid task name");
-        }
-
-        if (name.Length > 100)
-        {
-            logger.LogWarning("Task name too long");
-            return Results.BadRequest("Task name too long");
+            logger.LogWarning("Task name is required");
+            return Results.BadRequest(new { Message = "Task name is required" });
         }
 
         if (string.IsNullOrWhiteSpace(ifMatch))
@@ -186,28 +176,29 @@ public static class TasksEndpoints
 
         try
         {
-            logger.LogInformation("Attempting to update task name");
-            var result = await accessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
+            logger.LogInformation("Attempting to update task name to '{Name}'", name);
+            var accessorResult = await taskAccessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
 
-            if (result.NotFound)
+            if (accessorResult.NotFound)
             {
                 logger.LogWarning("Task not found for update");
                 return Results.NotFound("Task not found");
             }
 
-            if (result.PreconditionFailed)
+            if (accessorResult.PreconditionFailed)
             {
                 logger.LogWarning("Precondition failed (ETag mismatch)");
                 return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
             }
 
-            if (!string.IsNullOrWhiteSpace(result.NewEtag))
+            if (!string.IsNullOrWhiteSpace(accessorResult.NewEtag))
             {
-                response.Headers.ETag = $"\"{result.NewEtag}\"";
+                response.Headers.ETag = $"\"{accessorResult.NewEtag}\"";
             }
 
+            var updateResponse = accessorResult.ToApiModel();
             logger.LogInformation("Successfully updated task name");
-            return Results.Ok("Task name updated");
+            return Results.Ok(updateResponse);
         }
         catch (Exception ex)
         {
@@ -218,7 +209,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
@@ -232,12 +223,13 @@ public static class TasksEndpoints
         try
         {
             logger.LogInformation("Attempting to delete task");
-            var success = await accessorClient.DeleteTask(id);
+            var success = await taskAccessorClient.DeleteTask(id);
 
             if (success)
             {
                 logger.LogInformation("Successfully deleted task");
-                return Results.Ok("Task deleted");
+                var response = new DeleteTaskResponse { Message = "Task deleted" };
+                return Results.Ok(response);
             }
 
             logger.LogWarning("Task not found for deletion");

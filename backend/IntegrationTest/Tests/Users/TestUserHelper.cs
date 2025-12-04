@@ -19,7 +19,7 @@ public class TestUserHelper
     }
 
     // exactly the same shape you had in the test
-    public static CreateUser NewUser(Role role) => new()
+    public static CreateUserRequest NewUser(Role role) => new()
     {
         UserId = Guid.NewGuid(),
         Email = $"{role.ToString().ToLower()}-{Guid.NewGuid():N}@example.com",

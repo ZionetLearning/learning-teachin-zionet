@@ -7,7 +7,7 @@ using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -18,12 +18,18 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
     private readonly IAccessorClient _accessorClient;
+    private readonly IUsersAccessorClient _usersAccessorClient;
 
-    public AuthService(ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
+    public AuthService(
+        ILogger<AuthService> log,
+        IOptions<JwtSettings> jwtOptions,
+        IAccessorClient accessorClient,
+        IUsersAccessorClient usersAccessorClient)
     {
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
         _accessorClient = accessorClient;
+        _usersAccessorClient = usersAccessorClient;
     }
 
     public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
@@ -172,7 +178,7 @@ public class AuthService : IAuthService
                 throw new UnauthorizedAccessException("User-Agent mismatch.");
             }
             // get the role of the user
-            var user = await _accessorClient.GetUserAsync(session.UserId)
+            var user = await _usersAccessorClient.GetUserAsync(session.UserId)
                 ?? throw new UnauthorizedAccessException("User not found.");
             var role = user.Role;
 

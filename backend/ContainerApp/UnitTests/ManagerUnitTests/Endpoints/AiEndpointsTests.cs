@@ -1,7 +1,7 @@
 ﻿using Manager.Endpoints;
 using Manager.Models.Chat;
 using Manager.Models.Sentences;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Microsoft.AspNetCore.Http;
@@ -82,7 +82,7 @@ public class AiEndpointsTests
         var chatId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var history = new ChatHistoryForFrontDto
+        var history = new GetChatHistoryResponse
         {
             ChatId = chatId,
             Name = "Test Chat",

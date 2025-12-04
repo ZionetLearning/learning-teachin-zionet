@@ -1,4 +1,5 @@
 ﻿using Manager.Models;
+using Manager.Models.Emails;
 using Manager.Models.Sentences;
 using Manager.Models.Words;
 using Manager.Services.Clients.Engine.Models;
@@ -11,8 +12,10 @@ public interface IEngineClient
     Task<(bool success, string message)> ChatAsync(EngineChatRequest request);
     Task<(bool success, string message)> GlobalChatAsync(EngineChatRequest request);
     Task<(bool success, string message)> ExplainMistakeAsync(EngineExplainMistakeRequest request);
-    Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default);
+    Task<GetChatHistoryResponse?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default);
     Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request);
     Task<(bool success, string message)> GenerateSplitSentenceAsync(SentenceRequest request);
-    Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default);
+    Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainEngineRequest request, CancellationToken ct = default);
+    Task<(bool success, string message)> GenerateEmailDraftAsync(EmailDraftRequest request, CancellationToken ct = default);
+    Task<(bool success, string message)> SendEmailAsync(SendEmailRequest request, CancellationToken ct = default);
 }

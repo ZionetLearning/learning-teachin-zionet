@@ -1,8 +1,8 @@
 
 namespace Manager.Models.Users;
 
-public class UserLanguage
+public sealed record UserLanguage
 {
-    public required Guid UserId { get; set; }
-    public required SupportedLanguage Language { get; set; }
+    public required Guid UserId { get; init; }
+    public required SupportedLanguage Language { get; init; }
 }

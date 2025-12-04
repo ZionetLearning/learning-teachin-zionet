@@ -62,7 +62,7 @@ public class UsersIntegrationTests(
         var response = await Client.SendAsync(request);
 
         response.ShouldBeCreated();
-        var created = await ReadAsJsonAsync<UserData>(response);
+        var created = await ReadAsJsonAsync<GetUserResponse>(response);
 
         created!.PreferredLanguageCode.Should().Be(SupportedLanguage.en);
     }
@@ -83,7 +83,7 @@ public class UsersIntegrationTests(
         var response = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
 
         response.ShouldBeOk();
-        var fetched = await ReadAsJsonAsync<UserData>(response);
+        var fetched = await ReadAsJsonAsync<GetUserResponse>(response);
 
         fetched!.UserId.Should().Be(user.UserId);
         fetched.Email.Should().Be(user.Email);
@@ -105,7 +105,7 @@ public class UsersIntegrationTests(
     public async Task UpdateUser_Language_Valid()
     {
         var user = await CreateUserAsync();
-        var update = new UpdateUserModel { PreferredLanguageCode = SupportedLanguage.he };
+        var update = new UpdateUserRequest { PreferredLanguageCode = SupportedLanguage.he };
 
         var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
 
@@ -127,7 +127,7 @@ public class UsersIntegrationTests(
     public async Task UpdateUser_HebrewLevel_Student()
     {
         var user = await CreateUserAsync(role: "student");
-        var update = new UpdateUserModel { HebrewLevelValue = HebrewLevel.advanced };
+        var update = new UpdateUserRequest { HebrewLevelValue = HebrewLevel.advanced };
 
         var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
 
@@ -149,7 +149,7 @@ public class UsersIntegrationTests(
     public async Task UpdateUser_HebrewLevel_NonStudent()
     {
         var user = await CreateUserAsync(role: "teacher");
-        var update = new UpdateUserModel { HebrewLevelValue = HebrewLevel.fluent };
+        var update = new UpdateUserRequest { HebrewLevelValue = HebrewLevel.fluent };
 
         var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
 
@@ -188,7 +188,7 @@ public class UsersIntegrationTests(
         var response = await Client.GetAsync(ApiRoutes.UserList);
         response.ShouldBeOk();
 
-        var users = await ReadAsJsonAsync<List<UserData>>(response);
+        var users = await ReadAsJsonAsync<List<GetUserResponse>>(response);
         users!.Should().Contain(u => u.Email == u1.Email);
         users.Should().Contain(u => u.Email == u2.Email);
     }
@@ -205,7 +205,7 @@ public class UsersIntegrationTests(
         registerStudent.ShouldBeCreated();
 
         // Update student role to teacher
-        var update = new UpdateUserModel
+        var update = new UpdateUserRequest
         {
             Role = Role.Teacher
         };
@@ -215,7 +215,7 @@ public class UsersIntegrationTests(
 
         // Confirm the role change
         var getResponse = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
-        var updatedStudent = await ReadAsJsonAsync<UserData>(getResponse);
+        var updatedStudent = await ReadAsJsonAsync<GetUserResponse>(getResponse);
         updatedStudent!.Role.Should().Be(Role.Teacher);
     }
 
@@ -224,7 +224,7 @@ public class UsersIntegrationTests(
     {
         var student = await CreateUserAsync();
 
-        var update = new UpdateInterestsRequest
+        var update = new SetUserInterestsRequest
         {
             Interests = ["math", "science", "history"]
         };
@@ -235,7 +235,7 @@ public class UsersIntegrationTests(
         var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
         fetched.ShouldBeOk();
 
-        var data = await ReadAsJsonAsync<UserData>(fetched);
+        var data = await ReadAsJsonAsync<GetUserResponse>(fetched);
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
@@ -249,7 +249,7 @@ public class UsersIntegrationTests(
         registerStudent.ShouldBeCreated();
 
         // Still authenticated as admin here
-        var update = new UpdateInterestsRequest
+        var update = new SetUserInterestsRequest
         {
             Interests = ["biology", "coding"]
         };
@@ -259,7 +259,7 @@ public class UsersIntegrationTests(
 
         var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
         fetched.ShouldBeOk();
-        var data = await ReadAsJsonAsync<UserData>(fetched);
+        var data = await ReadAsJsonAsync<GetUserResponse>(fetched);
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
@@ -272,7 +272,7 @@ public class UsersIntegrationTests(
         var registerOther = await Client.PostAsJsonAsync(ApiRoutes.User, student2);
         registerOther.ShouldBeCreated();
 
-        var update = new UpdateInterestsRequest
+        var update = new SetUserInterestsRequest
         {
             Interests = ["football", "gaming"]
         };

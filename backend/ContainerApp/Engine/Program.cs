@@ -13,6 +13,7 @@ using Engine;
 using Engine.Models.QueueMessages;
 using Engine.Options;
 using Engine.Constants.Chat;
+using Engine.Models.Emails;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,19 @@ builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
+builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
+
+builder.Services
+    .AddOptions<TavilySettings>()
+    .Bind(builder.Configuration.GetSection("Tavily"))
+    .ValidateDataAnnotations();
+
+builder.Services.AddOptions<EmailSettings>()
+    .Bind(builder.Configuration.GetSection("BrevoMailing"))
+    .ValidateDataAnnotations();
 
 builder.Services.AddMemoryCache();
 builder.Services

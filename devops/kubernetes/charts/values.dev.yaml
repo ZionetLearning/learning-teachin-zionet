@@ -61,6 +61,17 @@ engine:
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
+    BrevoMailing_Name: "Learning Notification"
+    BrevoMailing_Address: ""
+    BrevoMailing_Host: ""
+    BrevoMailing_Port: ""
+    BrevoMailing_Username: ""
+    BrevoMailing_Password: ""
 
 accessor:
   image:

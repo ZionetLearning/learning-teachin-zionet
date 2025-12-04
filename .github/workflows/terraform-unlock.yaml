@@ -1,0 +1,113 @@
+name: Terraform Force Unlock
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: 'Environment name (for backend key)'
+        required: true
+        type: string
+        default: 'testrg'
+
+jobs:
+  validate-authorization:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/validate-confirmation.yaml
+    secrets: inherit
+
+  unlock:
+    needs: [validate-authorization]
+    runs-on: ubuntu-latest
+    environment: Development
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: "true"
+      TF_DIR: ./devops/terraform
+      TF_IN_AUTOMATION: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="key=${{ inputs.environment_name }}.terraform.tfstate" \
+            -reconfigure
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Auto-detect and Force Unlock
+        run: |
+          echo "Checking for state lock in environment: ${{ inputs.environment_name }}"
+          
+          # Determine which tfvars file to use based on environment name
+          ENVIRONMENT_NAME="${{ inputs.environment_name }}"
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            TFVARS_FILE="terraform.tfvars.dev"
+          elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            TFVARS_FILE="terraform.tfvars.prod"
+          else
+            TFVARS_FILE="terraform.tfvars.template"
+            # Generate template configuration for custom environments
+            echo "" >> terraform.tfvars.template
+            echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
+            echo "environment_name = \"$ENVIRONMENT_NAME\"" >> terraform.tfvars.template
+            echo "kubernetes_namespace = \"$ENVIRONMENT_NAME\"" >> terraform.tfvars.template
+          fi
+          
+          echo "Using tfvars file: $TFVARS_FILE"
+          
+          # Try to run a terraform command to trigger the lock error
+          LOCK_OUTPUT=$(terraform plan -var-file="$TFVARS_FILE" -detailed-exitcode 2>&1 || true)
+          
+          if echo "$LOCK_OUTPUT" | grep -q "state blob is already locked"; then
+            echo "State lock detected!"
+            echo "Lock error output:"
+            echo "$LOCK_OUTPUT"
+            
+            # Extract the lock ID from the error message
+            LOCK_ID=$(echo "$LOCK_OUTPUT" | grep "ID:" | sed 's/.*ID:[[:space:]]*//' | sed 's/[[:space:]]*$//' | head -1)
+            
+            # Clean up any ANSI color codes
+            LOCK_ID=$(echo "$LOCK_ID" | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n' | xargs)
+            
+            if [ -n "$LOCK_ID" ]; then
+              echo "Found lock ID: $LOCK_ID"
+              echo "Attempting to force unlock..."
+              terraform force-unlock -force "$LOCK_ID"
+              echo "✅ Unlock completed successfully!"
+            else
+              echo "❌ Could not extract lock ID from error output"
+              echo "Full error output:"
+              echo "$LOCK_OUTPUT"
+              exit 1
+            fi
+          else
+            echo "✅ No state lock detected - nothing to unlock"
+          fi
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_admin_username: ${{ secrets.POSTGRES_USER }}
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_PASSWORD }}
+          TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
+          TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}

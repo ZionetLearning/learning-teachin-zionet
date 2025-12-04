@@ -8,9 +8,10 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
-using Manager.Services.Clients.Accessor;
 using Manager.Models.Words;
 using Manager.Models.UserGameConfiguration;
+using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Models.Emails;
 
 namespace Manager.Endpoints;
 
@@ -26,7 +27,8 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.ProcessingChatMessage, HandleAIChatAnswerAsync)
         .On(MessageAction.GenerateSentences, HandleGenerateAnswer)
         .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer)
-        .On(MessageAction.GenerateWordExplain, HandleWordExplainAnswer);
+        .On(MessageAction.GenerateWordExplain, HandleWordExplainAnswer)
+        .On(MessageAction.GenerateEmailDraft, HandleEmailDraftGeneratedAsync);
 
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
@@ -128,13 +130,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(AIChatResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var userEvent = new UserEvent<AIChatResponse>
-            {
-                EventType = EventType.ChatAiAnswer,
-                Payload = chatResponse,
-            };
-
-            await _notificationService.SendEventAsync(userEvent.EventType, userContextMetadata.UserId, userEvent.Payload);
+            await _notificationService.SendEventAsync(EventType.ChatAiAnswer, userContextMetadata.UserId, chatResponse);
 
         }
         catch (NonRetryableException ex)
@@ -411,6 +407,61 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             _logger.LogError(ex, "Error processing word explanation response");
             throw new RetryableException("Transient error while processing word explanation.", ex);
+        }
+    }
+
+    public async Task HandleEmailDraftGeneratedAsync(
+        Message message,
+        IReadOnlyDictionary<string, string>? metadata,
+        Func<Task> renewLock,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var draft = message.Payload.Deserialize<EmailDraftResponse>();
+            if (draft is null)
+            {
+                _logger.LogError("EmailDraftResponse deserialization failed.");
+                throw new NonRetryableException("Invalid draft payload.");
+            }
+
+            if (!message.Metadata.HasValue)
+            {
+                _logger.LogError("Missing metadata for EmailDraftGenerated message.");
+                throw new NonRetryableException("Metadata (UserId) is required.");
+            }
+
+            var userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                _logger.LogError("UserId missing or invalid in metadata.");
+                throw new NonRetryableException("UserId is required.");
+            }
+
+            _logger.LogInformation("Sending EmailDraftGenerated event to user {UserId}", userId);
+
+            await _notificationService.SendEventAsync(EventType.EmailDraftGenerated, userId, draft);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing EmailDraftGenerated message.");
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON for EmailDraftGenerated message.");
+            throw new NonRetryableException("Invalid JSON response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled during EmailDraftGenerated processing.");
+                throw new OperationCanceledException("Cancelled", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Unhandled error processing EmailDraftGenerated message.");
+            throw new RetryableException("Unhandled error", ex);
         }
     }
 }

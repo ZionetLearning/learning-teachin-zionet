@@ -1,8 +1,8 @@
 using System.Net;
 using Dapr.Client;
 using Manager.Constants;
-using Manager.Models.Meetings;
-using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Services.Clients.Accessor.Models.Meetings;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -17,12 +17,12 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         _daprClient = daprClient;
     }
 
-    public async Task<MeetingDto?> GetMeetingAsync(Guid meetingId, CancellationToken ct = default)
+    public async Task<GetMeetingAccessorResponse?> GetMeetingAsync(Guid meetingId, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetMeetingAsync), nameof(MeetingAccessorClient));
         try
         {
-            var meeting = await _daprClient.InvokeMethodAsync<MeetingDto>(
+            var meeting = await _daprClient.InvokeMethodAsync<GetMeetingAccessorResponse>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 MeetingRoutesEndpoints.ById(meetingId),
@@ -42,18 +42,18 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         }
     }
 
-    public async Task<IReadOnlyList<MeetingDto>> GetMeetingsForUserAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<GetMeetingAccessorResponse>> GetMeetingsForUserAsync(Guid userId, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetMeetingsForUserAsync), nameof(MeetingAccessorClient));
         try
         {
-            var meetings = await _daprClient.InvokeMethodAsync<List<MeetingDto>>(
+            var meetings = await _daprClient.InvokeMethodAsync<List<GetMeetingAccessorResponse>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 MeetingRoutesEndpoints.ForUser(userId),
                 ct);
 
-            return meetings ?? new List<MeetingDto>();
+            return meetings ?? new List<GetMeetingAccessorResponse>();
         }
         catch (Exception ex)
         {
@@ -62,29 +62,16 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         }
     }
 
-    public async Task<MeetingDto> CreateMeetingAsync(CreateMeetingRequest request, Guid createdByUserId, CancellationToken ct = default)
+    public async Task<CreateMeetingAccessorResponse> CreateMeetingAsync(CreateMeetingAccessorRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(CreateMeetingAsync), nameof(MeetingAccessorClient));
         try
         {
-            var accessorRequest = new CreateMeetingAccessorRequest
-            {
-                Attendees = request.Attendees.Select(a => new AttendeeAccessorDto
-                {
-                    UserId = a.UserId,
-                    Role = a.Role
-                }).ToList(),
-                StartTimeUtc = request.StartTimeUtc,
-                DurationMinutes = request.DurationMinutes,
-                Description = request.Description,
-                CreatedByUserId = createdByUserId
-            };
-
-            var meeting = await _daprClient.InvokeMethodAsync<CreateMeetingAccessorRequest, MeetingDto>(
+            var meeting = await _daprClient.InvokeMethodAsync<CreateMeetingAccessorRequest, CreateMeetingAccessorResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 MeetingRoutesEndpoints.Base,
-                accessorRequest,
+                request,
                 ct);
 
             return meeting;
@@ -96,7 +83,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         }
     }
 
-    public async Task<bool> UpdateMeetingAsync(Guid meetingId, UpdateMeetingRequest request, CancellationToken ct = default)
+    public async Task<bool> UpdateMeetingAsync(Guid meetingId, UpdateMeetingAccessorRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateMeetingAsync), nameof(MeetingAccessorClient));
         try
@@ -147,12 +134,12 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         }
     }
 
-    public async Task<AcsTokenResponse> GenerateTokenForMeetingAsync(Guid meetingId, Guid userId, CancellationToken ct = default)
+    public async Task<GenerateMeetingTokenAccessorResponse> GenerateTokenForMeetingAsync(Guid meetingId, Guid userId, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GenerateTokenForMeetingAsync), nameof(MeetingAccessorClient));
         try
         {
-            var tokenResponse = await _daprClient.InvokeMethodAsync<AcsTokenResponse>(
+            var tokenResponse = await _daprClient.InvokeMethodAsync<GenerateMeetingTokenAccessorResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 MeetingRoutesEndpoints.GenerateToken(meetingId, userId),
@@ -167,12 +154,12 @@ public class MeetingAccessorClient : IMeetingAccessorClient
         }
     }
 
-    public async Task<AcsIdentityResponse> CreateOrGetIdentityAsync(Guid userId, CancellationToken ct = default)
+    public async Task<CreateOrGetIdentityAccessorResponse> CreateOrGetIdentityAsync(Guid userId, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(CreateOrGetIdentityAsync), nameof(MeetingAccessorClient));
         try
         {
-            var identity = await _daprClient.InvokeMethodAsync<AcsIdentityResponse>(
+            var identity = await _daprClient.InvokeMethodAsync<CreateOrGetIdentityAccessorResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 MeetingRoutesEndpoints.Identity(userId),

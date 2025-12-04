@@ -1,0 +1,19 @@
+{{- if .Values.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: accessor-scaledobject
+  namespace: {{ include "app.namespace" . }}
+spec:
+  scaleTargetRef:
+    name: {{ .Values.accessor.name }}
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: 5
+  cooldownPeriod: 100
+  triggers:
+    - type: kubernetes-workload
+      metadata:
+        podSelector: 'io.kompose.service=manager'
+        value: "1"
+{{- end }}

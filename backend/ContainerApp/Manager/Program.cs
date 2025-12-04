@@ -26,8 +26,7 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Manager;
-using Manager.Services.Avatars;
-using Manager.Services.Avatars.Models;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,18 +152,18 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<ITaskAccessorClient, TaskAccessorClient>();
+builder.Services.AddScoped<IUsersAccessorClient, UsersAccessorClient>();
 builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
+builder.Services.AddScoped<IClassesAccessorClient, ClassesAccessorClient>();
 builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
+builder.Services.AddScoped<IWordCardsAccessorClient, WordCardsAccessorClient>();
+builder.Services.AddScoped<IAchievementAccessorClient, AchievementAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
-
-builder.Services
-  .AddOptions<AvatarsOptions>()
-  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
-
-builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
+builder.Services.AddScoped<IEmailAccessorClient, EmailAccessorClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -266,6 +265,8 @@ app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
+app.MapAchievementEndpoints();
+app.MapEmailEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

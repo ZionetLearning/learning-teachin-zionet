@@ -1,7 +1,10 @@
 ﻿using Manager.Endpoints;
 using Manager.Models;
+using Manager.Models.Tasks.Requests;
+using Manager.Models.Tasks.Responses;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Services.Clients.Accessor.Models.Tasks;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,17 +15,18 @@ using System.Text.Json;
 namespace ManagerUnitTests.Endpoints;
 public class ManagerEndpointsTests
 {
-    private readonly Mock<IAccessorClient> _accessor = new(MockBehavior.Strict);
+    private readonly Mock<ITaskAccessorClient> _taskAccessor = new(MockBehavior.Strict);
     private readonly Mock<IEngineClient> _engine = new(MockBehavior.Strict);
     private readonly Mock<ILogger> _log = new();
 
-    private static TaskModel MakeTask(int id, string name) => new()
+    private static GetTaskAccessorResponse MakeGetTaskAccessorResponse(int id, string name) => new()
     {
         Id = id,
         Name = name,
         Payload = "{}"
     };
-    private Task<IResult> Invoke(string method, int id, string? name = null, string? ifMatch = null)
+
+    private Task<IResult> Invoke(string method, int id, UpdateTaskNameRequest? request = null, string? ifMatch = null)
     {
         var http = new DefaultHttpContext();
 
@@ -32,16 +36,16 @@ public class ManagerEndpointsTests
                                         typeof(TasksEndpoints),
                                         "UpdateTaskNameAsync",
                                         id,
-                                        name!,
+                                        request!.Name,
                                         ifMatch,
-                                        _accessor.Object,
+                                        _taskAccessor.Object,
                                         _log.Object,
                                         http.Response),
             "DeleteTaskAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "DeleteTaskAsync",
                                         id,
-                                        _accessor.Object,
+                                        _taskAccessor.Object,
                                         _log.Object),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
         };
@@ -50,40 +54,40 @@ public class ManagerEndpointsTests
     [Fact(DisplayName = "GET /task/{id} => 200 when found")]
     public async Task GetTask_Returns_Ok_When_Found()
     {
-        var task = MakeTask(7, "X");
-        _accessor.Setup(s => s.GetTaskWithEtagAsync(7, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((task, "abc"));
+        var accessorResponse = MakeGetTaskAccessorResponse(7, "X");
+        _taskAccessor.Setup(s => s.GetTaskWithEtagAsync(7, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((accessorResponse, "abc"));
 
         var http = new DefaultHttpContext();
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             7,
-            _accessor.Object,
+            _taskAccessor.Object,
             _log.Object,
             http.Response
         );
 
-        var ok = Assert.IsType<Ok<TaskModel>>(result);
+        var ok = Assert.IsType<Ok<GetTaskResponse>>(result);
         Assert.Equal(7, ok.Value!.Id);
         Assert.Equal("X", ok.Value!.Name);
         Assert.Equal("\"abc\"", http.Response.Headers.ETag.ToString());
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "GET /task/{id} => 404 when missing")]
     public async Task GetTask_Returns_NotFound_When_Missing()
     {
-        _accessor.Setup(s => s.GetTaskWithEtagAsync(999, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(((TaskModel? Task, string? ETag))(null, null));
+        _taskAccessor.Setup(s => s.GetTaskWithEtagAsync(999, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(((GetTaskAccessorResponse? Task, string? ETag))(null, null));
 
         var http = new DefaultHttpContext();
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             999,
-            _accessor.Object,
+            _taskAccessor.Object,
             _log.Object,
             http.Response
         );
@@ -91,22 +95,34 @@ public class ManagerEndpointsTests
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, status.StatusCode);
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /task => 202 + body when valid")]
     public async Task CreateTask_Returns_Accepted_When_Valid()
     {
-        var model = MakeTask(42, "UnitTest Task");
+        var request = new CreateTaskRequest
+        {
+            Id = 42,
+            Name = "UnitTest Task",
+            Payload = "{}"
+        };
 
-        _accessor.Setup(s => s.PostTaskAsync(model))
-                 .ReturnsAsync((true, "queued"));
+        var accessorResponse = new CreateTaskAccessorResponse
+        {
+            Success = true,
+            Message = "queued",
+            Id = 42
+        };
+
+        _taskAccessor.Setup(s => s.PostTaskAsync(It.IsAny<CreateTaskAccessorRequest>()))
+                 .ReturnsAsync(accessorResponse);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "CreateTaskAsync",
-            model,
-            _accessor.Object,
+            request,
+            _taskAccessor.Object,
             _log.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -118,16 +134,21 @@ public class ManagerEndpointsTests
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(valueResult.Value));
         var root = doc.RootElement;
-        Assert.Equal("queued", root.GetProperty("status").GetString());
+        Assert.Equal("queued", root.GetProperty("Status").GetString());
         Assert.Equal(42, root.GetProperty("Id").GetInt32());
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /tasklong => 202 Accepted")]
     public async Task CreateTaskLong_Returns_Accepted()
     {
-        var model = MakeTask(77, "Long");
+        var model = new TaskModel
+        {
+            Id = 77,
+            Name = "Long",
+            Payload = "{}"
+        };
 
         _engine.Setup(s => s.ProcessTaskLongAsync(It.IsAny<TaskModel>()))
                .ReturnsAsync((true, "accepted"));
@@ -146,34 +167,38 @@ public class ManagerEndpointsTests
     }
 
     [Theory(DisplayName = "Update/Delete => 200 when true, 404 when false")]
-    [InlineData("UpdateTaskNameAsync", true, typeof(Ok<string>), StatusCodes.Status404NotFound)]
-    [InlineData("DeleteTaskAsync", true, typeof(Ok<string>), StatusCodes.Status404NotFound)]
+    [InlineData("UpdateTaskNameAsync", true, typeof(Ok<UpdateTaskNameResponse>), StatusCodes.Status404NotFound)]
+    [InlineData("DeleteTaskAsync", true, typeof(Ok<DeleteTaskResponse>), StatusCodes.Status404NotFound)]
     public async Task Endpoint_Returns_Correct_Status(
         string method, bool successFirst, Type okType, int notFoundStatus)
     {
         switch (method)
         {
             case "UpdateTaskNameAsync":
-                _accessor
+                _taskAccessor
                     .SetupSequence(s => s.UpdateTaskNameAsync(
                         It.IsAny<int>(),
                         It.IsAny<string>(),
                         It.IsAny<string>(),
                         It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new Manager.Models.UpdateTaskNameResult(
-                        Updated: successFirst,
-                        NotFound: !successFirst,
-                        PreconditionFailed: false,
-                        NewEtag: successFirst ? "etag-2" : null))
-                    .ReturnsAsync(new Manager.Models.UpdateTaskNameResult(
-                        Updated: false,
-                        NotFound: true,
-                        PreconditionFailed: false,
-                        NewEtag: null));
+                    .ReturnsAsync(new UpdateTaskNameAccessorResponse
+                    {
+                        Updated = successFirst,
+                        NotFound = !successFirst,
+                        PreconditionFailed = false,
+                        NewEtag = successFirst ? "etag-2" : null
+                    })
+                    .ReturnsAsync(new UpdateTaskNameAccessorResponse
+                    {
+                        Updated = false,
+                        NotFound = true,
+                        PreconditionFailed = false,
+                        NewEtag = null
+                    });
                 break;
 
             case "DeleteTaskAsync":
-                _accessor
+                _taskAccessor
                     .SetupSequence(s => s.DeleteTask(It.IsAny<int>()))
                     .ReturnsAsync(successFirst)
                     .ReturnsAsync(false);
@@ -186,7 +211,7 @@ public class ManagerEndpointsTests
         // Act + Assert: common helper for both methods
         await AssertEndpointBehavior(method, okType, notFoundStatus);
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     private async Task AssertEndpointBehavior(string method, Type okType, int notFoundStatus)
@@ -194,7 +219,7 @@ public class ManagerEndpointsTests
         // Successful case
         var okRes = method switch
         {
-            "UpdateTaskNameAsync" => await Invoke(method, 10, "new-name", "\"etag-1\""),
+            "UpdateTaskNameAsync" => await Invoke(method, 10, new UpdateTaskNameRequest { Name = "new-name" }, "\"etag-1\""),
             "DeleteTaskAsync" => await Invoke(method, 10),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method)
         };
@@ -203,7 +228,7 @@ public class ManagerEndpointsTests
         // Not found case
         IResult nfRes = method switch
         {
-            "UpdateTaskNameAsync" => await Invoke(method, 11, "missing", "\"etag-1\""),
+            "UpdateTaskNameAsync" => await Invoke(method, 11, new UpdateTaskNameRequest { Name = "missing" }, "\"etag-1\""),
             "DeleteTaskAsync" => await Invoke(method, 11),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method)
         };

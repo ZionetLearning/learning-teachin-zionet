@@ -1,7 +1,8 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
-using Manager.Models.WordCards;
-using Manager.Services.Clients.Accessor;
+using Manager.Mapping;
+using Manager.Models.WordCards.Requests;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -20,19 +21,21 @@ public static class WordCardsEndpoints
         wordCardsGroup.MapPost("/", CreateWordCardAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        wordCardsGroup.MapPatch("/learned", MarkWordCardAsLearnedAsync)
+        wordCardsGroup.MapPatch("/learned", UpdateLearnedStatusAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         return app;
     }
 
     private static async Task<IResult> GetWordCardsAsync(
-        [FromServices] IAccessorClient accessorClient,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromServices] IWordCardsAccessorClient wordCardsAccessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetWordCardsAsync");
+        using var scope = logger.BeginScope("GetWordCardsAsync. FromDate={FromDate}, ToDate={ToDate}", fromDate, toDate);
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -42,11 +45,13 @@ public static class WordCardsEndpoints
                 return Results.Unauthorized();
             }
 
-            logger.LogInformation("Fetching word cards for UserId={UserId}", userId);
+            logger.LogInformation("Fetching word cards for UserId={UserId}, FromDate={FromDate}, ToDate={ToDate}",
+                userId, fromDate, toDate);
 
-            var result = await accessorClient.GetWordCardsAsync(userId, ct);
+            var accessorResponse = await wordCardsAccessorClient.GetWordCardsAsync(userId, fromDate, toDate, ct);
+            var response = accessorResponse.ToApiModel();
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -57,7 +62,7 @@ public static class WordCardsEndpoints
 
     private static async Task<IResult> CreateWordCardAsync(
         [FromBody] CreateWordCardRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IWordCardsAccessorClient wordCardsAccessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
@@ -74,9 +79,11 @@ public static class WordCardsEndpoints
 
             logger.LogInformation("Creating word card for UserId={UserId}, Hebrew={Hebrew}, English={English}", userId, request.Hebrew, request.English);
 
-            var result = await accessorClient.CreateWordCardAsync(userId, request, ct);
+            var accessorRequest = request.ToAccessor(userId);
+            var accessorResponse = await wordCardsAccessorClient.CreateWordCardAsync(accessorRequest, ct);
+            var response = accessorResponse.ToApiModel();
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -85,14 +92,14 @@ public static class WordCardsEndpoints
         }
     }
 
-    private static async Task<IResult> MarkWordCardAsLearnedAsync(
-        [FromBody] LearnedStatus request,
-        [FromServices] IAccessorClient accessorClient,
+    private static async Task<IResult> UpdateLearnedStatusAsync(
+        [FromBody] UpdateLearnedStatusRequest request,
+        [FromServices] IWordCardsAccessorClient wordCardsAccessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("MarkWordCardAsLearnedAsync");
+        using var scope = logger.BeginScope("UpdateLearnedStatusAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -102,11 +109,13 @@ public static class WordCardsEndpoints
                 return Results.Unauthorized();
             }
 
-            logger.LogInformation("Marking word card as learned. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
+            logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
 
-            var result = await accessorClient.UpdateLearnedStatusAsync(userId, request, ct);
+            var accessorRequest = request.ToAccessor(userId);
+            var accessorResponse = await wordCardsAccessorClient.UpdateLearnedStatusAsync(accessorRequest, ct);
+            var response = accessorResponse.ToApiModel();
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {

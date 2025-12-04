@@ -39,7 +39,7 @@ public class TeacherStudentIntegrationTests(
         // List students (admin can list any)
         var list = await Client.GetAsync(MappingRoutes.ListStudents(teacher.UserId));
         list.StatusCode.Should().Be(HttpStatusCode.OK);
-        var students = await list.Content.ReadFromJsonAsync<List<UserData>>() ?? new();
+        var students = await list.Content.ReadFromJsonAsync<List<GetUserResponse>>() ?? new();
         students.Should().Contain(s => s.UserId == student.UserId);
 
         // Unassign
@@ -132,7 +132,7 @@ public class TeacherStudentIntegrationTests(
         // Admin lists teachers for the student
         var list = await Client.GetAsync(MappingRoutes.ListTeachers(student.UserId));
         list.StatusCode.Should().Be(HttpStatusCode.OK);
-        var teachers = await list.Content.ReadFromJsonAsync<List<UserData>>() ?? new();
+        var teachers = await list.Content.ReadFromJsonAsync<List<GetUserResponse>>() ?? new();
         teachers.Should().Contain(t => t.UserId == teacher.UserId);
     }
 }
