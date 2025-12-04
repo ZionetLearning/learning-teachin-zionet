@@ -9,6 +9,7 @@ using Manager.Models.UserGameConfiguration;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Models.Games;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -124,7 +125,10 @@ public class ManagerQueueHandlerTests
         // Setup mock to return expected result when SaveGeneratedSentencesAsync is called
         mockAccessor
             .Setup(x => x.SaveGeneratedSentencesAsync(It.IsAny<GeneratedSentenceDto>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedResult);
+            .ReturnsAsync(new SaveGeneratedSentencesAccessorResponse
+            {
+                Sentences = expectedResult
+            });
 
         var message = new Message
         {

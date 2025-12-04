@@ -10,6 +10,6 @@ public interface IGameAccessorClient
     Task<GetHistoryAccessorResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null, CancellationToken ct = default);
     Task<GetMistakesAccessorResponse> GetMistakesAsync(Guid studentId, int page, int pageSize, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null, CancellationToken ct = default);
     Task<GetAllHistoriesAccessorResponse> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default);
-    Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
+    Task<SaveGeneratedSentencesAccessorResponse> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
     Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct);
 }

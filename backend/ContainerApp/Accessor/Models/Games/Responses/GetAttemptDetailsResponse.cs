@@ -1,11 +1,11 @@
-using Manager.Models.UserGameConfiguration;
+using Accessor.Models.GameConfiguration;
 
-namespace Manager.Models.Games;
+namespace Accessor.Models.Games.Responses;
 
 /// <summary>
-/// Matches Accessor's AttemptHistoryResponseDto
+/// Response model for getting attempt details
 /// </summary>
-public sealed record AttemptHistoryDto
+public sealed record GetAttemptDetailsResponse
 {
     public required Guid ExerciseId { get; init; }
     public required Guid AttemptId { get; init; }
@@ -17,3 +17,4 @@ public sealed record AttemptHistoryDto
     public required decimal Accuracy { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
 }
+

@@ -4,6 +4,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 
 /// <summary>
 /// Response model received from Accessor service for student mistakes
+/// Matches Accessor's GetMistakesResponse structure
 /// </summary>
 public sealed record GetMistakesAccessorResponse
 {
@@ -11,4 +12,5 @@ public sealed record GetMistakesAccessorResponse
     public required int Page { get; init; }
     public required int PageSize { get; init; }
     public required int TotalCount { get; init; }
+    public bool HasNextPage => Page * PageSize < TotalCount;
 }

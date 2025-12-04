@@ -1,27 +1,28 @@
-using Manager.Models.UserGameConfiguration;
+using Accessor.Models.GameConfiguration;
 
-namespace Manager.Models.Games;
+namespace Accessor.Models.Games.Responses;
 
 /// <summary>
-/// Matches Accessor's MistakeResponseDto
+/// DTO representing a mistake in response
 /// </summary>
-public sealed record ExerciseMistakes
+public sealed record MistakeResponseDto
 {
     public required Guid ExerciseId { get; init; }
     public required Guid AttemptId { get; init; }
     public required GameName GameType { get; init; }
     public required Difficulty Difficulty { get; init; }
     public required List<string> CorrectAnswer { get; init; }
-    public required List<MistakeAttempt> Mistakes { get; init; }
+    public required List<MistakeAttemptResponseDto> Mistakes { get; init; }
 }
 
 /// <summary>
-/// Matches Accessor's MistakeAttemptResponseDto
+/// DTO representing a single mistake attempt in response
 /// </summary>
-public sealed record MistakeAttempt
+public sealed record MistakeAttemptResponseDto
 {
     public required Guid AttemptId { get; init; }
     public required List<string> WrongAnswer { get; init; }
     public required decimal Accuracy { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
 }
+

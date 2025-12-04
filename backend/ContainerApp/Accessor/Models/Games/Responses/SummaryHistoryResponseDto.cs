@@ -1,11 +1,11 @@
-using Manager.Models.UserGameConfiguration;
+using Accessor.Models.GameConfiguration;
 
-namespace Manager.Models.Games;
+namespace Accessor.Models.Games.Responses;
 
 /// <summary>
-/// Matches Accessor's SummaryHistoryResponseDto
+/// DTO representing summary history in response
 /// </summary>
-public sealed record SummaryHistoryDto
+public sealed record SummaryHistoryResponseDto
 {
     public required GameName GameType { get; init; }
     public required Difficulty Difficulty { get; init; }
@@ -13,3 +13,4 @@ public sealed record SummaryHistoryDto
     public required int TotalSuccesses { get; init; }
     public required int TotalFailures { get; init; }
 }
+
