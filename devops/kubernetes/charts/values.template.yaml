@@ -66,6 +66,12 @@ engine:
     Tavily__IncludeAnswer: "true"
     Tavily__IncludeRawContent: "false"
     Tavily__SearchDepth: "basic"
+    BrevoMailing__Name: "Learning Notification"
+    BrevoMailing__Address: ""
+    BrevoMailing__Host: ""
+    BrevoMailing__Port: ""
+    BrevoMailing__Username: ""
+    BrevoMailing__Password: ""
 
 accessor:
   image:
