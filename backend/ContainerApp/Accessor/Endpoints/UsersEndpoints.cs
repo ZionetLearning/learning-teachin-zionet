@@ -1,4 +1,6 @@
 ﻿using Accessor.Models.Users;
+using Accessor.Models.Users.Requests;
+using Accessor.Mapping;
 using Accessor.Services;
 using Accessor.Services.Avatars;
 using Accessor.Services.Avatars.Models;
@@ -63,7 +65,13 @@ public static class UsersEndpoints
         try
         {
             var user = await userService.GetUserAsync(userId);
-            return user is not null ? Results.Ok(user) : Results.NotFound();
+            if (user is null)
+            {
+                return Results.NotFound();
+            }
+
+            var response = user.ToResponse();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -73,23 +81,28 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> CreateUserAsync(
-        [FromBody] UserModel user,
+        [FromBody] CreateUserRequest request,
         [FromServices] IUserService userService,
         [FromServices] ILogger<UserService> logger)
     {
-        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(CreateUserAsync), user.UserId);
-        if (user is null)
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(CreateUserAsync), request.UserId);
+        if (request is null)
         {
-            logger.LogWarning("User model is null.");
+            logger.LogWarning("User request is null.");
             return Results.BadRequest("User data is required.");
         }
 
         try
         {
-            var created = await userService.CreateUserAsync(user);
-            return created
-                ? Results.Created($"/users-accessor/{user.UserId}", user)
-                : Results.Conflict("User with the same email already exists.");
+            var dbModel = request.ToDbModel();
+            var created = await userService.CreateUserAsync(dbModel);
+            if (!created)
+            {
+                return Results.Conflict("User with the same email already exists.");
+            }
+
+            var response = dbModel.ToCreateResponse();
+            return Results.Created($"/users-accessor/{response.UserId}", response);
         }
         catch (Exception ex)
         {
@@ -100,14 +113,14 @@ public static class UsersEndpoints
 
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
-        [FromBody] UpdateUserModel user,
+        [FromBody] UpdateUserRequest request,
         [FromServices] IUserService userService,
         [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(UpdateUserAsync), userId);
-        if (user is null)
+        if (request is null)
         {
-            logger.LogWarning("Update user model is null.");
+            logger.LogWarning("Update user request is null.");
             return Results.BadRequest("User data is required.");
         }
 
@@ -119,7 +132,8 @@ public static class UsersEndpoints
 
         try
         {
-            var updated = await userService.UpdateUserAsync(user, userId);
+            var dbModel = request.ToDbModel();
+            var updated = await userService.UpdateUserAsync(dbModel, userId);
             return updated ? Results.Ok("User updated") : Results.NotFound("User not found");
         }
         catch (Exception ex)
@@ -176,8 +190,9 @@ public static class UsersEndpoints
             if (roleEnum is null || roleEnum == Role.Admin)
             {
                 var all = await service.GetAllUsersAsync(roleFilter: null, teacherId: null, ct);
-                logger.LogInformation("Returned {Count} users (admin/all)", all.Count());
-                return Results.Ok(all);
+                var response = all.ToResponseList();
+                logger.LogInformation("Returned {Count} users (admin/all)", response.Count);
+                return Results.Ok(response);
             }
 
             if (callerId is null || callerId == Guid.Empty)
@@ -189,8 +204,9 @@ public static class UsersEndpoints
             if (roleEnum == Role.Teacher)
             {
                 var students = await service.GetStudentsForTeacherAsync(callerId.Value, ct);
-                logger.LogInformation("Returned {Count} students for teacher {TeacherId}", students.Count(), callerId);
-                return Results.Ok(students);
+                var response = students.ToResponseList();
+                logger.LogInformation("Returned {Count} students for teacher {TeacherId}", response.Count, callerId);
+                return Results.Ok(response);
             }
 
             // Unknown role (shouldn't happen)
@@ -294,9 +310,10 @@ public static class UsersEndpoints
         try
         {
             var list = await service.GetStudentsForTeacherAsync(teacherId, ct);
+            var response = list.ToResponseList();
 
-            logger.LogInformation("Returned {Count} students for teacher {TeacherId}", list?.Count() ?? 0, teacherId);
-            return Results.Ok(list ?? Enumerable.Empty<UserData>());
+            logger.LogInformation("Returned {Count} students for teacher {TeacherId}", response.Count, teacherId);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -329,8 +346,9 @@ public static class UsersEndpoints
                 return Results.NotFound(new { message = "No teachers found for this student." });
             }
 
-            logger.LogInformation("Returned {Count} teachers for student {StudentId}", list.Count(), studentId);
-            return Results.Ok(list);
+            var response = list.ToResponseList();
+            logger.LogInformation("Returned {Count} teachers for student {StudentId}", response.Count, studentId);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -357,7 +375,13 @@ public static class UsersEndpoints
         {
             var interests = await service.GetUserInterestsAsync(userId, ct);
 
-            return interests == null ? Results.NotFound(new { message = "No interests found for user." }) : Results.Ok(interests);
+            if (interests == null)
+            {
+                return Results.NotFound(new { message = "No interests found for user." });
+            }
+
+            var response = interests.ToInterestsResponse();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -367,29 +391,29 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> UpdateUserLanguageAsync(
-        [FromBody] UserLanguage payload,
+        [FromBody] UpdateUserLanguageRequest request,
         [FromServices] IUserService service,
         [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
         CancellationToken ct)
     {
-        if (payload is null)
+        if (request is null)
         {
-            logger.LogInformation("payload is null.");
+            logger.LogInformation("Request is null.");
             return Results.BadRequest();
         }
 
-        if (payload.UserId == Guid.Empty)
+        if (request.UserId == Guid.Empty)
         {
             logger.LogInformation("User id is empty.");
             return Results.BadRequest();
         }
 
-        using var _ = logger.BeginScope("Method={Method}, Language={Language}", nameof(UpdateUserLanguageAsync), payload.Language);
+        using var _ = logger.BeginScope("Method={Method}, Language={Language}", nameof(UpdateUserLanguageAsync), request.Language);
 
         try
         {
-            var response = await service.UpdateUserLanguageAsync(payload.UserId, payload.Language, ct);
-            if (!response)
+            var updated = await service.UpdateUserLanguageAsync(request.UserId, request.Language, ct);
+            if (!updated)
             {
                 logger.LogInformation("User not found.");
                 return Results.NotFound("User not found.");
