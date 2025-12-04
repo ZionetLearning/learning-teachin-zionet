@@ -38,9 +38,6 @@ public static class SummaryEndpoints
         ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetPeriodOverviewAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
-            userId, startDate, endDate);
-
         if (userId == Guid.Empty)
         {
             logger.LogWarning("Invalid userId provided");
@@ -80,9 +77,6 @@ public static class SummaryEndpoints
         ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetPeriodGamePracticeAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
-            userId, startDate, endDate);
-
         if (userId == Guid.Empty)
         {
             logger.LogWarning("Invalid userId provided");
@@ -122,9 +116,6 @@ public static class SummaryEndpoints
         ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetPeriodWordCardsAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
-            userId, startDate, endDate);
-
         if (userId == Guid.Empty)
         {
             logger.LogWarning("Invalid userId provided");
@@ -164,9 +155,6 @@ public static class SummaryEndpoints
         ILogger<SummaryEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetPeriodAchievementsAsync. UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
-            userId, startDate, endDate);
-
         if (userId == Guid.Empty)
         {
             logger.LogWarning("Invalid userId provided");
