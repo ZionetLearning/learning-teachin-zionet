@@ -15,7 +15,9 @@ variable "signalr_id" {
 }
 
 variable "redis_id" {
-  type = string
+  type        = string
+  default     = null
+  description = "Redis cache ID for monitoring (optional, null when using self-hosted Redis)"
 }
 
 variable "frontend_static_web_app_id" {

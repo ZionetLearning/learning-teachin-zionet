@@ -83,3 +83,9 @@ accessor:
 # Langfuse Configuration (dev only)
 langfuse:
   enabled: true
+
+# Redis Configuration for test environments
+redis:
+  useAzureRedis: false  # Use self-hosted Redis for cost savings
+  enabled: true
+  password: "test-redis-password-changeme"  # Will be set by CI/CD

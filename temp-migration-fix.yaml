@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temp-migration-fix
+  namespace: devops-tools
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migrate
+        image: langfuse/langfuse:3.112.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo "Final comprehensive migration fix..."
+            # Fix all known problematic migrations at once
+            npx prisma migrate resolve --rolled-back 20240513082205_observations_view_add_time_to_first_token --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20240612101858_add_index_observations_project_id_prompt_id --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied "20240718011733_dataset_runs_add_unique_dataset_id_project_id_name copy" --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --rolled-back 20251024193002_add_mixpanel_integration --schema=packages/shared/prisma/schema.prisma || true
+            # Deploy all remaining migrations
+            npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
+        envFrom:
+        - secretRef:
+            name: langfuse-secrets

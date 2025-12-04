@@ -18,7 +18,6 @@ variable "subscription_id" {
 variable "identity_id" {
   description = "Azure AD identity ID"
   type        = string
-  default     = "0997f44d-fadf-4be8-8dc6-202f7302f680"
 }
 
 variable "tenant_id" {
@@ -147,6 +146,51 @@ variable "brevo_password" {
   default     = null
 }
 
+#------------- Application Secret Variables -------------
+# Azure OpenAI API Key
+variable "azure_openai_api_key" {
+  type        = string
+  sensitive   = true
+  description = "Azure OpenAI API key for engine service"
+  default     = null
+}
+
+# Azure Speech Service Key
+variable "azure_speech_key" {
+  type        = string
+  sensitive   = true
+  description = "Azure Speech Service key for accessor and engine services"
+  default     = null
+}
+
+# JWT configuration secrets
+variable "jwt_secret" {
+  type        = string
+  sensitive   = true
+  description = "JWT signing secret for manager service"
+  default     = null
+}
+
+variable "jwt_issuer" {
+  type        = string
+  description = "JWT issuer for authentication"
+  default     = "TeachinLearningPlatform"
+}
+
+variable "jwt_audience" {
+  type        = string
+  description = "JWT audience for authentication"
+  default     = "TeachinLearningPlatform"
+}
+
+variable "jwt_refresh_token_hash_key" {
+  type        = string
+  sensitive   = true
+  description = "JWT refresh token hash key for manager service"
+  default     = null
+}
+
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
@@ -186,15 +230,22 @@ variable "frontend_apps" {
   default     = ["student", "teacher", "admin"]
 }
 
-#------------- Redis Variables -------------
+#------------- Redis Variables (COMMENTED OUT - Using Self-Hosted Redis on AKS) -------------
+# NOTE: Redis is now deployed as a self-hosted StatefulSet on AKS for cost optimization (~$17/month savings)
+# To revert to Azure Redis Cache:
+#   1. Uncomment the redis module and data sources in main.tf
+#   2. Uncomment the redis secrets in secrets.tf
+#   3. Set redis.useAzureRedis=true in Helm values files
+#   4. Run terraform apply
+
 variable "redis_name" {
-  description = "Name of the Redis cache instance"
+  description = "Name of the Redis cache instance (for dev/test environments) - NOT USED when self-hosting"
   type        = string
   default     = "redis-teachin-shared"
 }
 
 variable "use_shared_redis" {
-  description = "Use shared Redis instance instead of creating new one"
+  description = "Use shared Redis instance instead of creating new one - NOT USED when self-hosting"
   type        = bool
   default     = true
 }
@@ -202,7 +253,18 @@ variable "use_shared_redis" {
 variable "shared_redis_name" {
   type        = string
   default     = null
-  description = "Name of shared Redis cache, if using shared"
+  description = "Name of shared Redis cache, if using shared - NOT USED when self-hosting"
+}
+
+#------------- Key Vault Variables -------------
+variable "key_vault_rg" {
+  description = "Resource group name of the Key Vault"
+  type        = string
+}
+
+variable "key_vault_name" {
+  description = "Name of the Key Vault"
+  type        = string
 }
 
 #------------- Environment Variables -------------

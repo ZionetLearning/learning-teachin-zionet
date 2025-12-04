@@ -11,5 +11,5 @@ output "signalr_diag_id" {
 }
 
 output "redis_diag_id" {
-  value = azurerm_monitor_diagnostic_setting.redis.id
+  value = length(azurerm_monitor_diagnostic_setting.redis) > 0 ? azurerm_monitor_diagnostic_setting.redis[0].id : null
 }

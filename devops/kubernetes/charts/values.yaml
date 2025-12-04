@@ -304,6 +304,35 @@ dapr:
 # Langfuse Configuration (optional observability tool)
 langfuse:
   enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
+
+# Redis Configuration
+redis:
+  # Set to false to use self-hosted Redis on AKS, true to use Azure Redis Cache
+  useAzureRedis: false
+  
+  # Self-hosted Redis settings (used when useAzureRedis: false)
+  enabled: true  # Set to true only when deploying to redis namespace
+  
+  # Shared Redis configuration
+  namespace: "redis"  # Dedicated namespace for shared Redis instance
+  host: "redis.redis.svc.cluster.local"  # DNS name for shared Redis
+  port: 6379
+  
+  password: "changeme"  # Will be overridden by CI/CD with generated password
+  image:
+    repository: redis
+    tag: "6.2"
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 4Gi
+  resources:
+    requests:
+      cpu: "50m"      # Reduced based on actual usage (~0.0016 cores observed)
+      memory: "50Mi"  # Reduced based on actual usage (~2.45 MiB observed, 50Mi gives 20x headroom)
+    limits:
+      cpu: "100m"     # Reduced from 500m, still plenty of headroom
+      memory: "256Mi" # Reduced from 512Mi, still 100x actual usage
   
 # KEDA scaler (optional)
 keda:

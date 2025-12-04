@@ -1,4 +1,5 @@
 # Langfuse root auth routes ingress (handle redirects from NextAuth)
+# This file is a template - use langfuse.sh to deploy with correct environment settings
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -13,10 +14,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin.westeurope.cloudapp.azure.com
-      secretName: teachin-tls
+        - DOMAIN_PLACEHOLDER
+      secretName: DOMAIN_SECRET_PLACEHOLDER
   rules:
-  - host: teachin.westeurope.cloudapp.azure.com
+  - host: DOMAIN_PLACEHOLDER
     http:
       paths:
       # API routes at root level (NextJS app makes calls here when served under /langfuse)
@@ -104,10 +105,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin.westeurope.cloudapp.azure.com
-      secretName: teachin-tls
+        - DOMAIN_PLACEHOLDER
+      secretName: DOMAIN_SECRET_PLACEHOLDER
   rules:
-  - host: teachin.westeurope.cloudapp.azure.com
+  - host: DOMAIN_PLACEHOLDER
     http:
       paths:
       # API routes under /langfuse - rewrite to remove /langfuse prefix
@@ -136,10 +137,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin.westeurope.cloudapp.azure.com
-      secretName: teachin-tls
+        - DOMAIN_PLACEHOLDER
+      secretName: DOMAIN_SECRET_PLACEHOLDER
   rules:
-  - host: teachin.westeurope.cloudapp.azure.com
+  - host: DOMAIN_PLACEHOLDER
     http:
       paths:
       # Static assets under /langfuse
@@ -182,10 +183,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin.westeurope.cloudapp.azure.com
-      secretName: teachin-tls
+        - DOMAIN_PLACEHOLDER
+      secretName: DOMAIN_SECRET_PLACEHOLDER
   rules:
-  - host: teachin.westeurope.cloudapp.azure.com
+  - host: DOMAIN_PLACEHOLDER
     http:
       paths:
       # Langfuse application main path - rewrite /langfuse to / and /langfuse/xxx to /xxx

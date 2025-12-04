@@ -2,14 +2,29 @@
 set -e
 
 # ==============================
-# Configuration
+# Configuration - Environment Detection
 # ==============================
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-static-ip"
-MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 LOCATION="westeurope"
-DNS_LABEL="teachin"
+
+# Detect environment from context or parameter
+ENVIRONMENT="${1:-dev}"  # Default to dev if no parameter passed
+
+# Set resource group and DNS label based on environment
+if [ "$ENVIRONMENT" = "prod" ]; then
+    MC_RG="MC_prod-zionet-learning-2025_aks-cluster-prod_westeurope"
+    DNS_LABEL="teachin-prod"
+    echo "🏭 Production environment detected"
+else
+    MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
+    DNS_LABEL="teachin"
+    echo "🔧 Development environment detected"
+fi
+
+echo "Using resource group: $MC_RG"
+echo "Using DNS label: $DNS_LABEL"
 
 # ==============================
 # 0. Uninstall existing ingress-nginx Helm release (if any)

@@ -47,8 +47,9 @@ resource "azurerm_monitor_diagnostic_setting" "signalr" {
   }
 }
 
-# Redis Cache
+# Redis Cache (only when using Azure Redis)
 resource "azurerm_monitor_diagnostic_setting" "redis" {
+  count                      = var.redis_id != null ? 1 : 0
   name                       = "redis-diag"
   target_resource_id         = var.redis_id
   log_analytics_workspace_id = var.log_analytics_workspace_id
@@ -72,11 +73,11 @@ resource "azurerm_monitor_diagnostic_setting" "application_insights" {
   enabled_log {
     category = "AppRequests"
   }
-  
+
   enabled_log {
-    category = "AppPageViews" 
+    category = "AppPageViews"
   }
-  
+
   enabled_log {
     category = "AppExceptions"
   }
