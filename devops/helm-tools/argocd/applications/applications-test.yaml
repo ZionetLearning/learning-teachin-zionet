@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: zionet-apps-prod
+  name: zionet-apps-test
   namespace: argocd
   annotations:
     # Enable image updater for multiple images
@@ -39,7 +39,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
-    targetRevision: snir-avichai/1047/create-argocd
+    targetRevision: HEAD
     path: devops/kubernetes/charts
     helm:
       valueFiles:
