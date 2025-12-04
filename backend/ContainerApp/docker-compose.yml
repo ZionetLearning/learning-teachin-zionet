@@ -160,10 +160,8 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:5001
       - ASPNETCORE_ENVIRONMENT=Development
-      - Avatars__StorageConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=MF9oMXNAU2FtcGxlS2V5X2Jhc2U2NF9GT1JfREVWLj09;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1
 
     depends_on:
-      - azurite
       - servicebus-emulator
       - redis
     networks:
@@ -278,12 +276,15 @@ services:
       - DB_NAME=postgres_db
       - DB_USER=postgres
       - DB_PASS=postgres
+      - Avatars__StorageConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=MF9oMXNAU2FtcGxlS2V5X2Jhc2U2NF9GT1JfREVWLj09;BlobEndpoint=http://azurite:10000/devstoreaccount1
     depends_on:
         redis:
           condition: service_healthy
         postgres:
           condition: service_started
         servicebus-emulator:
+          condition: service_started
+        azurite:
           condition: service_started
     networks:
       - microservice-net

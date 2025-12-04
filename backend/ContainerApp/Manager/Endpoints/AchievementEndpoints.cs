@@ -35,6 +35,8 @@ public static class AchievementEndpoints
 
     private static async Task<IResult> GetUserAchievementsAsync(
         [FromRoute] Guid userId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         [FromServices] ILogger<AchievementEndpoint> log,
         [FromServices] IAchievementAccessorClient achievementAccessorClient,
         CancellationToken ct)
@@ -47,10 +49,11 @@ public static class AchievementEndpoints
 
         try
         {
-            log.LogInformation("Getting achievements for user {UserId}", userId);
+            log.LogInformation("Getting achievements for user {UserId}, FromDate={FromDate}, ToDate={ToDate}",
+                userId, fromDate, toDate);
 
-            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(ct);
-            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, ct);
+            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(fromDate, toDate, ct);
+            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, fromDate, toDate, ct);
 
             var result = allAchievements.Select(a => a.ToDto(
                 isUnlocked: unlockedMap.ContainsKey(a.AchievementId),
@@ -117,7 +120,7 @@ public static class AchievementEndpoints
                 },
                 ct);
 
-            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(ct);
+            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(ct: ct);
             var featureAchievements = allAchievements
                 .Where(a => a.Feature.Equals(feature, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -125,7 +128,7 @@ public static class AchievementEndpoints
             log.LogInformation("Found {Count} achievements for feature {Feature}",
                 featureAchievements.Count, sanitizedFeature);
 
-            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct);
+            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct: ct);
             var unlockedIds = unlockedMap.Keys.ToHashSet();
 
             var unlockedAchievements = new List<string>();

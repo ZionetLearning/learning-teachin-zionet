@@ -17,5 +17,6 @@ public enum EventType
     SentenceGeneration,
     SplitSentenceGeneration,
     WordExplain,
-    AchievementUnlocked
+    AchievementUnlocked,
+    EmailDraftGenerated,
 }

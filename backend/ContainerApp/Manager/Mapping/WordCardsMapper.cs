@@ -15,7 +15,7 @@ public static class WordCardsMapper
     /// <summary>
     /// Maps Accessor GetWordCardsAccessorResponse to frontend WordCardDto enumerable
     /// </summary>
-    public static IEnumerable<WordCardDto> ToFront(this GetWordCardsAccessorResponse accessorResponse)
+    public static IEnumerable<WordCardDto> ToApiModel(this GetWordCardsAccessorResponse accessorResponse)
     {
         return accessorResponse.WordCards.Select(wc => new WordCardDto
         {
@@ -48,7 +48,7 @@ public static class WordCardsMapper
     /// <summary>
     /// Maps Accessor CreateWordCardAccessorResponse to frontend CreateWordCardResponse
     /// </summary>
-    public static CreateWordCardResponse ToFront(this CreateWordCardAccessorResponse accessorResponse)
+    public static CreateWordCardResponse ToApiModel(this CreateWordCardAccessorResponse accessorResponse)
     {
         return new CreateWordCardResponse
         {
@@ -80,7 +80,7 @@ public static class WordCardsMapper
     /// <summary>
     /// Maps Accessor UpdateLearnedStatusAccessorResponse to frontend UpdateLearnedStatusResponse
     /// </summary>
-    public static UpdateLearnedStatusResponse ToFront(this UpdateLearnedStatusAccessorResponse accessorResponse)
+    public static UpdateLearnedStatusResponse ToApiModel(this UpdateLearnedStatusAccessorResponse accessorResponse)
     {
         return new UpdateLearnedStatusResponse
         {

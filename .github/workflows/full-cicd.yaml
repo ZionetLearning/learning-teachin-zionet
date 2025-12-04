@@ -22,11 +22,6 @@ on:
           description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
           required: true
           type: string
-        list_services_names:
-          description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
-          required: false
-          type: string
-          default: ''
         frontend_apps:
           description: 'Select frontend deployment option'
           required: false
@@ -35,6 +30,11 @@ on:
           options: 
             - 'all'
             - 'none'
+        use_keda:
+          description: 'Enable KEDA setup workflow'
+          type: boolean
+          required: false
+          default: true
           
 jobs:
   validate-authorization:
@@ -47,7 +47,6 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
-      list_services_names: ${{ github.event.inputs.list_services_names }}
     secrets: inherit
  
   terraform-apply:
@@ -76,6 +75,7 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
+      use_keda: ${{ fromJson(github.event.inputs.use_keda) }}
     secrets: inherit
  
   deploy-frontend:
@@ -86,5 +86,3 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
     secrets: inherit
- 
- 
