@@ -377,6 +377,32 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         finally
         {
             sw.Stop();
+            if (renewalCts is not null)
+            {
+                try
+                {
+                    await renewalCts.CancelAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while cancelling renewal");
+                }
+
+                try
+                {
+                    if (renewTask is not null)
+                    {
+                        await renewTask;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while awaiting renew lock task");
+                }
+
+                renewalCts.Dispose();
+            }
+
             _logger.LogInformation("Chat request logic finished in {ElapsedMs} ms", sw.ElapsedMilliseconds);
 
         }
@@ -490,6 +516,16 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
             MetadataValidation.ValidateUserContext(userContext, _logger);
+
+            if (mistRequest.UserId == Guid.Empty)
+            {
+                throw new NonRetryableException("UserId is required.");
+            }
+
+            if (mistRequest.TtlSeconds <= 0)
+            {
+                throw new NonRetryableException("TtlSeconds must be greater than 0.");
+            }
 
             var chatRequest = new EngineChatRequest
             {

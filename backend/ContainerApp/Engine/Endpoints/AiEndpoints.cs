@@ -38,19 +38,32 @@ public static class AiEndpoints
 
         var snapshot = await accessorClient.GetHistorySnapshotAsync(chatId, userId, ct);
 
-        if (snapshot is null || snapshot?.History.ValueKind == JsonValueKind.Undefined || snapshot?.History.ValueKind == JsonValueKind.Null)
+        if (snapshot is null)
         {
-            return Results.Ok(new List<object>());
+            return Results.Ok(new ChatHistoryForFrontDto
+            {
+                ChatId = chatId,
+                Messages = new List<OpenAiMessageDto>()
+            });
         }
 
-        var messages = ai.GetFormattedHistory(snapshot!.History);
+        var messages = new List<OpenAiMessageDto>();
+
+        if (snapshot.History.ValueKind != JsonValueKind.Undefined && snapshot.History.ValueKind != JsonValueKind.Null)
+        {
+            var formattedMessages = ai.GetFormattedHistory(snapshot.History);
+            if (formattedMessages is not null)
+            {
+                messages = formattedMessages.ToList();
+            }
+        }
 
         var payload = new ChatHistoryForFrontDto
         {
             ChatId = snapshot.ThreadId,
             Name = snapshot.Name,
             ChatType = snapshot.ChatType,
-            Messages = messages?.OfType<OpenAiMessageDto>().ToList() ?? new List<OpenAiMessageDto>()
+            Messages = messages?.ToList()
         };
 
         return Results.Ok(payload);

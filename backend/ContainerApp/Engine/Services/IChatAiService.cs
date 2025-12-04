@@ -10,6 +10,6 @@ public interface IChatAiService
 
     IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(EngineChatRequest request, HistorySnapshotDto historySnapshot, CancellationToken ct = default);
 
-    IEnumerable<OpenAiMessageDto?> GetFormattedHistory(JsonElement historyJson);
+    IEnumerable<OpenAiMessageDto> GetFormattedHistory(JsonElement historyJson);
 
 }
