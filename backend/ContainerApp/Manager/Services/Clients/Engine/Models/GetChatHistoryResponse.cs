@@ -1,11 +1,13 @@
-﻿namespace Manager.Services.Clients.Engine.Models;
+﻿using Manager.Models.Chat;
+
+namespace Manager.Services.Clients.Engine.Models;
 
 public sealed record GetChatHistoryResponse
 {
     public required Guid ChatId { get; init; }
     public string Name { get; init; } = string.Empty;
     public string ChatType { get; init; } = "default";
-    public required IReadOnlyList<ChatHistoryMessageDto> Messages { get; init; }
+    public required IReadOnlyList<OpenAiMessageDto> Messages { get; init; }
 }
 
 public sealed record ChatHistoryMessageDto

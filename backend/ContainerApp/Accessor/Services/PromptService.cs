@@ -96,12 +96,18 @@ public class PromptService : IPromptService
         // If Langfuse is configured, try to fetch from it first
         if (_langfuseOptions.Value.IsConfigured())
         {
+            var timeout = TimeSpan.FromSeconds(3);
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(timeout);
+
             try
             {
-                _logger.LogInformation("Fetching prompt '{PromptKey}' (version: {Version}, label: {Label}) from Langfuse",
-                    promptKey, version, label);
+                _logger.LogInformation(
+                    "Fetching prompt '{PromptKey}' (version: {Version}, label: {Label}) from Langfuse with timeout {Timeout}s",
+                    promptKey, version, label, timeout.TotalSeconds);
 
-                var langfusePrompt = await _langfuseService.GetPromptAsync(promptKey, version, label, cancellationToken);
+                var langfusePrompt = await _langfuseService.GetPromptAsync(promptKey, version, label, cts.Token);
 
                 if (langfusePrompt != null)
                 {
@@ -121,9 +127,17 @@ public class PromptService : IPromptService
 
                 _logger.LogWarning("Prompt '{PromptKey}' not found in Langfuse, falling back to local defaults", promptKey);
             }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(
+                    "Timeout ({Timeout}s) while retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults",
+                    timeout.TotalSeconds, promptKey);
+            }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults", promptKey);
+                _logger.LogWarning(ex,
+                    "Error retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults",
+                    promptKey);
             }
         }
         else

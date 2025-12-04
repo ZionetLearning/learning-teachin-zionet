@@ -87,10 +87,15 @@ public class AiEndpointsTests
             ChatId = chatId,
             Name = "Test Chat",
             ChatType = "default",
-            Messages = new List<ChatHistoryMessageDto>
+            Messages = new List<OpenAiMessageDto>
+        {
+            new OpenAiMessageDto
             {
-                new() { Role = "user", Text = "msg1", CreatedAt = DateTimeOffset.UtcNow }
+                Id = Guid.NewGuid().ToString(),
+                Role = "user",
+                Content = "msg1"
             }
+        }
         };
 
         var engine = new Mock<IEngineClient>();

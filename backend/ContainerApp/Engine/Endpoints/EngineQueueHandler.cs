@@ -33,7 +33,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.TestLongTask, HandleTestLongTaskAsync)
         .On(MessageAction.ProcessingChatMessage, HandleProcessingChatMessageAsync)
         .On(MessageAction.ProcessingGlobalChatMessage, HandleProcessingChatMessageAsync)
-        .On(MessageAction.ProcessingExplainMistake, HandleProcessingChatMessageAsync)
+        .On(MessageAction.ProcessingExplainMistake, HandleProcessingExplainMistakeAsync)
         .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateWordExplain, HandleWordExplainAsync);
@@ -162,19 +162,55 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         Func<Task> renewLock,
         CancellationToken ct)
     {
+        EngineChatRequest? request = null;
+        UserContextMetadata? userContext = null;
+
+        try
+        {
+
+            (request, userContext) = DeserializeAndValidateChatRequest(message);
+
+            await ProcessChatStreamAsync(request, userContext, message.ActionName, renewLock, ct);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (RetryableException ex)
+        {
+            _logger.LogError(ex, "Retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                throw new OperationCanceledException("Operation was cancelled.", ex, ct);
+            }
+
+            _logger.LogError(ex, "Unexpected error in {Action} handler wrapper", message.ActionName);
+            throw new RetryableException("Unexpected error while processing.", ex);
+        }
+    }
+
+    private async Task ProcessChatStreamAsync(
+    EngineChatRequest request,
+    UserContextMetadata userContext,
+    MessageAction actionName,
+    Func<Task> renewLock,
+    CancellationToken ct)
+    {
         var sw = Stopwatch.StartNew();
         var seq = 0;
         Func<int> NextSeq = () => Interlocked.Increment(ref seq) - 1;
 
-        EngineChatRequest? request = null;
-        UserContextMetadata? userContext = null;
         CancellationTokenSource? renewalCts = null;
         Task? renewTask = null;
         Stopwatch? elapsed = null;
 
         try
         {
-            (request, userContext) = DeserializeAndValidateChatRequest(message);
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
 
             var historySnapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
@@ -246,7 +282,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     if (chunk.Stage == ChatStreamStage.Model && !string.IsNullOrEmpty(chunk.Delta))
                     {
                         total.Append(chunk.Delta);
-
                     }
 
                     await _publisher.SendStreamAsync(userContext!, chunk, ct);
@@ -298,6 +333,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             _logger.LogInformation("Chat request {RequestId} processed successfully", request.RequestId);
         }
+
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             var canceled = new EngineChatStreamResponse
@@ -311,18 +347,22 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 IsFinal = true,
                 ElapsedMs = elapsed?.ElapsedMilliseconds ?? 0
             };
-            _logger.LogWarning("Operation cancelled while processing {Action}", message.ActionName);
+
+            _logger.LogWarning("Operation cancelled while processing {Action}", actionName);
+
             await _publisher.SendStreamAsync(
-                MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger),
+                userContext,
                 canceled,
                 CancellationToken.None);
             throw;
         }
+
         catch (NonRetryableException ex)
         {
-            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", actionName);
             throw;
         }
+
         catch (Exception ex)
         {
             if (ct.IsCancellationRequested)
@@ -330,14 +370,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 throw new OperationCanceledException("Operation was cancelled.", ex, ct);
             }
 
-            _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
+            _logger.LogError(ex, "Transient error while processing AI chat {Action}", actionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
+
         finally
         {
             sw.Stop();
-            _logger.LogInformation("Chat request finished in {ElapsedMs} ms", sw.ElapsedMilliseconds);
-
             if (renewalCts is not null)
             {
                 try
@@ -363,6 +402,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
                 renewalCts.Dispose();
             }
+
+            _logger.LogInformation("Chat request logic finished in {ElapsedMs} ms", sw.ElapsedMilliseconds);
+
         }
     }
 
@@ -460,6 +502,68 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
         return (isChangeTitle, chatNewTitle);
 
+    }
+
+    private async Task HandleProcessingExplainMistakeAsync(
+    Message message,
+    IReadOnlyDictionary<string, string>? metadata,
+    Func<Task> renewLock,
+    CancellationToken ct)
+    {
+        try
+        {
+            var mistRequest = PayloadValidation.DeserializeOrThrow<EngineExplainMistakeRequest>(message, _logger);
+
+            var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
+            MetadataValidation.ValidateUserContext(userContext, _logger);
+
+            if (mistRequest.UserId == Guid.Empty)
+            {
+                throw new NonRetryableException("UserId is required.");
+            }
+
+            if (mistRequest.TtlSeconds <= 0)
+            {
+                throw new NonRetryableException("TtlSeconds must be greater than 0.");
+            }
+
+            var chatRequest = new EngineChatRequest
+            {
+                RequestId = mistRequest.RequestId,
+                ThreadId = mistRequest.ThreadId,
+                UserId = mistRequest.UserId,
+                UserMessage = "Explain mistake context",
+                ChatType = mistRequest.ChatType,
+                SentAt = mistRequest.SentAt,
+                TtlSeconds = mistRequest.TtlSeconds,
+                AttemptId = mistRequest.AttemptId,
+                GameType = mistRequest.GameType,
+            };
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (now > chatRequest.SentAt + chatRequest.TtlSeconds)
+            {
+                _logger.LogWarning("Explain request {RequestId} expired. Skipping.", chatRequest.RequestId);
+                throw new NonRetryableException("Request TTL expired.");
+            }
+
+            await ProcessChatStreamAsync(chatRequest, userContext, message.ActionName, renewLock, ct);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                throw new OperationCanceledException("Operation was cancelled.", ex, ct);
+            }
+
+            _logger.LogError(ex, "Error while mapping explain mistake request {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
     }
 
     private async Task HandleSentenceGenerationAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
