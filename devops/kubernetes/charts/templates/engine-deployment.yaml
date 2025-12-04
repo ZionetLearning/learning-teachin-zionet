@@ -82,6 +82,33 @@ spec:
               value: "{{ .Values.engine.env.Tavily__IncludeRawContent }}"
             - name: Tavily__SearchDepth
               value: "{{ .Values.engine.env.Tavily__SearchDepth }}"
+            - name: BrevoMailing__Name
+              value: "{{ .Values.engine.env.BrevoMailing__Name }}"
+            - name: BrevoMailing__Address
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.brevoAddress }}
+            - name: BrevoMailing__Host
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.brevoHost }}
+            - name: BrevoMailing__Port
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.brevoPort }}
+            - name: BrevoMailing__Username
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.brevoUsername }}
+            - name: BrevoMailing__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.brevoPassword }}
           resources:
             {{- toYaml .Values.engine.resources | nindent 12 }}
 ---
