@@ -10,18 +10,26 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Users;
 
 [Collection("Per-test user collection")]
-public class UserAvatarIntegrationTests(
-    HttpClientFixture httpClientFixture,
-    ITestOutputHelper outputHelper,
-    SignalRTestFixture signalRFixture
-) : UsersTestBase(httpClientFixture, outputHelper, signalRFixture), IAsyncLifetime
+public class UserAvatarIntegrationTests : UsersTestBase, IAsyncLifetime
 {
-    // min png
+    // Сохраняем outputHelper в поле явно
+    private readonly ITestOutputHelper _outputHelper;
+    private readonly HttpClientFixture _httpClientFixture; // Если нужно, сохраняем и это
+
     private static readonly byte[] Png1x1 = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Yk7G4sAAAAASUVORK5CYII=");
 
     private const string ContentTypePng = "image/png";
 
+    public UserAvatarIntegrationTests(
+        HttpClientFixture httpClientFixture,
+        ITestOutputHelper outputHelper,
+        SignalRTestFixture signalRFixture
+    ) : base(httpClientFixture, outputHelper, signalRFixture)
+    {
+        _outputHelper = outputHelper;
+        _httpClientFixture = httpClientFixture;
+    }
 
     [Fact(DisplayName = "Avatar: POST upload-url returns SAS and blobPath")]
     public async Task UploadUrl_Should_Return_Sas_And_Path()
@@ -41,6 +49,8 @@ public class UserAvatarIntegrationTests(
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var dto = await ReadAsJsonAsync<GetUploadAvatarUrlResponse>(resp);
+
+        Assert.NotNull(dto);
 
         var uploadUrl = dto.UploadUrl;
         var blobPath = dto.BlobPath;
@@ -110,10 +120,10 @@ public class UserAvatarIntegrationTests(
             if (swSet.Elapsed > setTimeout)
             {
                 // add log with blobPath and userData.AvatarPath for easier debugging
-                outputHelper.WriteLine($"Timeout waiting for avatar to be set. Expected blobPath: ");
-                outputHelper.WriteLine(blobPath);
-                outputHelper.WriteLine($"Actual AvatarPath: ");
-                outputHelper.WriteLine(userData?.AvatarPath ?? "null");
+                _outputHelper.WriteLine($"Timeout waiting for avatar to be set. Expected blobPath: ");
+                _outputHelper.WriteLine(blobPath);
+                _outputHelper.WriteLine($"Actual AvatarPath: ");
+                _outputHelper.WriteLine(userData?.AvatarPath ?? "null");
                 Assert.Equal(blobPath, userData?.AvatarPath);
             }
 

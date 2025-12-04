@@ -20,18 +20,11 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         _options = opt.Value;
         _log = log;
 
-        _log.LogInformation("Avatar storage init. Container={Container}, last 20 chars={Last20}!",
-    _options.Container,
-    _options.StorageConnectionString?.Length > 20
-        ? _options.StorageConnectionString[^20..]
-        : _options.StorageConnectionString);
-
-        var raw = _options.StorageConnectionString;
-        var normConnection = NormalizeConnString(raw);
+        var connectionString = _options.StorageConnectionString;
 
         try
         {
-            _svc = new BlobServiceClient(normConnection);
+            _svc = new BlobServiceClient(connectionString);
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
@@ -169,20 +162,5 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         EnsureReady();
         var blob = _container!.GetBlobClient(blobPath);
         await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
-    }
-
-    private static string NormalizeConnString(string? cs)
-    {
-        if (string.IsNullOrWhiteSpace(cs))
-        {
-            return cs ?? "";
-        }
-
-        var charsToDrop = new[] { '\uFEFF', '\u200B', '\u200C', '\u200D', '\u200E', '\u200F', '\u2060', '\u00A0' };
-        var cleaned = new string(cs.Where(c => !charsToDrop.Contains(c)).ToArray());
-
-        cleaned = cleaned.Trim().Trim('\"', '\'');
-
-        return cleaned;
     }
 }
