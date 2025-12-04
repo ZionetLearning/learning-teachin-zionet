@@ -4,7 +4,7 @@ public enum CacheDataType
 {
     History,
     WordCards,
-    AchievementsMap,
+    Achievements,
     Mistakes,
     AllAchievements,
     Overview,

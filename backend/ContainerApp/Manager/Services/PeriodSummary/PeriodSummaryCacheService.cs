@@ -48,16 +48,16 @@ public class PeriodSummaryCacheService : IPeriodSummaryCacheService
         await CacheDataAsync(CacheDataType.WordCards, key, data, DefaultTtlMetadata, ct);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, DateTime>?> GetCachedAchievementsMapAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default)
+    public async Task<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>?> GetCachedAchievementsAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default)
     {
-        var key = PeriodSummaryCacheKeys.AchievementsMap(userId, startDate, endDate);
-        return await GetCachedDataAsync<IReadOnlyDictionary<Guid, DateTime>>(CacheDataType.AchievementsMap, key, ct);
+        var key = PeriodSummaryCacheKeys.Achievements(userId, startDate, endDate);
+        return await GetCachedDataAsync<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>>(CacheDataType.Achievements, key, ct);
     }
 
-    public async Task CacheAchievementsMapAsync(Guid userId, DateTime startDate, DateTime endDate, IReadOnlyDictionary<Guid, DateTime> data, CancellationToken ct = default)
+    public async Task CacheAchievementsAsync(Guid userId, DateTime startDate, DateTime endDate, IReadOnlyList<GetUserUnlockedAchievementAccessorResponse> data, CancellationToken ct = default)
     {
-        var key = PeriodSummaryCacheKeys.AchievementsMap(userId, startDate, endDate);
-        await CacheDataAsync(CacheDataType.AchievementsMap, key, data, DefaultTtlMetadata, ct);
+        var key = PeriodSummaryCacheKeys.Achievements(userId, startDate, endDate);
+        await CacheDataAsync(CacheDataType.Achievements, key, data, DefaultTtlMetadata, ct);
     }
 
     public async Task<GetMistakesAccessorResponse?> GetCachedMistakesAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default)

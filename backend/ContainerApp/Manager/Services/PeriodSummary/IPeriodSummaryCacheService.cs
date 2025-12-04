@@ -13,8 +13,8 @@ public interface IPeriodSummaryCacheService
     Task<GetWordCardsAccessorResponse?> GetCachedWordCardsAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
     Task CacheWordCardsAsync(Guid userId, DateTime startDate, DateTime endDate, GetWordCardsAccessorResponse data, CancellationToken ct = default);
 
-    Task<IReadOnlyDictionary<Guid, DateTime>?> GetCachedAchievementsMapAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
-    Task CacheAchievementsMapAsync(Guid userId, DateTime startDate, DateTime endDate, IReadOnlyDictionary<Guid, DateTime> data, CancellationToken ct = default);
+    Task<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>?> GetCachedAchievementsAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
+    Task CacheAchievementsAsync(Guid userId, DateTime startDate, DateTime endDate, IReadOnlyList<GetUserUnlockedAchievementAccessorResponse> data, CancellationToken ct = default);
 
     Task<GetMistakesAccessorResponse?> GetCachedMistakesAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
     Task CacheMistakesAsync(Guid userId, DateTime startDate, DateTime endDate, GetMistakesAccessorResponse data, CancellationToken ct = default);

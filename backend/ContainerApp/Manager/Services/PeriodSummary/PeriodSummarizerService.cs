@@ -50,7 +50,7 @@ public class PeriodSummarizerService : IPeriodSummarizerService
 
             var historyTask = GetOrFetchHistoryAsync(userId, fromDate, toDate, ct);
             var wordCardsTask = GetOrFetchWordCardsAsync(userId, startDate, endDate, ct);
-            var achievementsTask = GetOrFetchAchievementsMapAsync(userId, startDate, endDate, ct);
+            var achievementsTask = GetOrFetchAchievementsAsync(userId, startDate, endDate, ct);
 
             await Task.WhenAll(historyTask, wordCardsTask, achievementsTask);
 
@@ -310,18 +310,16 @@ public class PeriodSummarizerService : IPeriodSummarizerService
             _logger.LogInformation("Building period achievements for UserId={UserId}, StartDate={StartDate}, EndDate={EndDate}",
                 userId, startDate, endDate);
 
-            var unlockedMap = await GetOrFetchAchievementsMapAsync(userId, startDate, endDate, ct);
-            var allAchievements = await GetOrFetchAllAchievementsAsync(ct);
+            var unlockedAchievements = await GetOrFetchAchievementsAsync(userId, startDate, endDate, ct);
 
-            var unlockedInPeriod = allAchievements
-                .Where(a => unlockedMap.ContainsKey(a.AchievementId))
+            var unlockedInPeriod = unlockedAchievements
                 .Select(a => new UnlockedAchievement
                 {
                     AchievementId = a.AchievementId,
                     Name = a.Name ?? string.Empty,
                     Description = a.Description ?? string.Empty,
                     Feature = a.Feature ?? string.Empty,
-                    UnlockedAt = unlockedMap[a.AchievementId]
+                    UnlockedAt = a.UnlockedAt
                 })
                 .OrderByDescending(a => a.UnlockedAt)
                 .ToList();
@@ -433,23 +431,6 @@ public class PeriodSummarizerService : IPeriodSummarizerService
         return wordCards;
     }
 
-    private async Task<IReadOnlyDictionary<Guid, DateTime>> GetOrFetchAchievementsMapAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct)
-    {
-        var cached = await _cacheService.GetCachedAchievementsMapAsync(userId, startDate, endDate, ct);
-        if (cached is not null)
-        {
-            _logger.LogDebug("Using cached achievements map from Accessor for UserId={UserId}", userId);
-            return cached;
-        }
-
-        _logger.LogDebug("Fetching achievements map from Accessor for UserId={UserId}", userId);
-        var achievementsMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, startDate, endDate, ct);
-
-        await _cacheService.CacheAchievementsMapAsync(userId, startDate, endDate, achievementsMap, ct);
-
-        return achievementsMap;
-    }
-
     private async Task<GetMistakesAccessorResponse> GetOrFetchMistakesAsync(Guid userId, DateTimeOffset fromDate, DateTimeOffset toDate, CancellationToken ct)
     {
         var startDate = fromDate.UtcDateTime;
@@ -519,20 +500,20 @@ public class PeriodSummarizerService : IPeriodSummarizerService
         return mistakes;
     }
 
-    private async Task<IReadOnlyList<AchievementAccessorModel>> GetOrFetchAllAchievementsAsync(CancellationToken ct)
+    private async Task<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>> GetOrFetchAchievementsAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken ct)
     {
-        var cached = await _cacheService.GetCachedAllAchievementsAsync(ct);
+        var cached = await _cacheService.GetCachedAchievementsAsync(userId, startDate, endDate, ct);
         if (cached is not null)
         {
-            _logger.LogDebug("Using cached all achievements from Accessor");
+            _logger.LogDebug("Using cached achievements from Accessor for UserId={UserId}", userId);
             return cached;
         }
 
-        _logger.LogDebug("Fetching all achievements from Accessor");
-        var allAchievements = await _achievementAccessorClient.GetAllActiveAchievementsAsync(ct: ct);
+        _logger.LogDebug("Fetching achievements from Accessor for UserId={UserId}", userId);
+        var achievements = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, startDate, endDate, ct);
 
-        await _cacheService.CacheAllAchievementsAsync(allAchievements, ct);
+        await _cacheService.CacheAchievementsAsync(userId, startDate, endDate, achievements, ct);
 
-        return allAchievements;
+        return achievements;
     }
 }

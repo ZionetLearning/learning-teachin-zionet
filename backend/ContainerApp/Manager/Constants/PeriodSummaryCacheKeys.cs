@@ -5,7 +5,7 @@ public static class PeriodSummaryCacheKeys
 
     private const string HistoryPattern = "period-accessor:history:{0}:{1}:{2}"; // userId:startDate:endDate
     private const string WordCardsPattern = "period-accessor:word-cards:{0}:{1}:{2}";
-    private const string AchievementsMapPattern = "period-accessor:achievements-map:{0}:{1}:{2}";
+    private const string AchievementsPattern = "period-accessor:achievements:{0}:{1}:{2}";
     private const string MistakesPattern = "period-accessor:mistakes:{0}:{1}:{2}";
     private const string AllAchievementsPattern = "period-accessor:all-achievements";
 
@@ -21,8 +21,8 @@ public static class PeriodSummaryCacheKeys
     public static string WordCards(Guid userId, DateTime startDate, DateTime endDate) =>
         string.Format(WordCardsPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
-    public static string AchievementsMap(Guid userId, DateTime startDate, DateTime endDate) =>
-        string.Format(AchievementsMapPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
+    public static string Achievements(Guid userId, DateTime startDate, DateTime endDate) =>
+        string.Format(AchievementsPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
     public static string Mistakes(Guid userId, DateTime startDate, DateTime endDate) =>
         string.Format(MistakesPattern, userId, startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
