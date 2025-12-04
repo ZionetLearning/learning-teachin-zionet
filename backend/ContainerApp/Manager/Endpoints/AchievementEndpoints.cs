@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Manager.Constants;
 using Manager.Hubs;
-using Manager.Mapping;
+
 using Manager.Models.Achievements;
 using Manager.Models.Notifications;
 using Manager.Services.Clients.Accessor.Interfaces;
@@ -53,15 +53,29 @@ public static class AchievementEndpoints
                 userId, fromDate, toDate);
 
             var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(fromDate, toDate, ct);
-            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, fromDate, toDate, ct);
+            var unlockedAchievements = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, fromDate, toDate, ct);
 
-            var result = allAchievements.Select(a => a.ToDto(
-                isUnlocked: unlockedMap.ContainsKey(a.AchievementId),
-                unlockedAt: unlockedMap.TryGetValue(a.AchievementId, out var unlockedAt) ? unlockedAt : null
-            )).ToList();
+            var unlockedLookup = unlockedAchievements.ToDictionary(u => u.AchievementId);
+
+            var result = allAchievements.Select(a =>
+            {
+                var isUnlocked = unlockedLookup.TryGetValue(a.AchievementId, out var unlocked);
+                return new AchievementDto
+                {
+                    AchievementId = a.AchievementId,
+                    Key = a.Key ?? string.Empty,
+                    Name = a.Name ?? string.Empty,
+                    Description = a.Description ?? string.Empty,
+                    Type = a.Type ?? string.Empty,
+                    Feature = a.Feature ?? string.Empty,
+                    TargetCount = a.TargetCount,
+                    IsUnlocked = isUnlocked,
+                    UnlockedAt = isUnlocked ? unlocked!.UnlockedAt : null
+                };
+            }).ToList();
 
             log.LogInformation("Returning {Total} achievements ({Unlocked} unlocked) for user {UserId}",
-                result.Count, unlockedMap.Count, userId);
+                result.Count, unlockedLookup.Count, userId);
 
             return Results.Ok(result);
         }
@@ -128,10 +142,10 @@ public static class AchievementEndpoints
             log.LogInformation("Found {Count} achievements for feature {Feature}",
                 featureAchievements.Count, sanitizedFeature);
 
-            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct: ct);
-            var unlockedIds = unlockedMap.Keys.ToHashSet();
+            var unlockedAchievements = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct: ct);
+            var unlockedIds = unlockedAchievements.Select(u => u.AchievementId).ToHashSet();
 
-            var unlockedAchievements = new List<string>();
+            var newlyUnlockedAchievements = new List<string>();
 
             foreach (var achievement in featureAchievements)
             {
@@ -153,7 +167,7 @@ public static class AchievementEndpoints
 
                     await achievementAccessorClient.UnlockAchievementAsync(request.UserId, achievement.AchievementId, ct);
 
-                    unlockedAchievements.Add(achievementKey);
+                    newlyUnlockedAchievements.Add(achievementKey);
 
                     var notification = new AchievementUnlockedNotification
                     {
@@ -182,7 +196,7 @@ public static class AchievementEndpoints
             {
                 Success = true,
                 NewCount = newCount,
-                UnlockedAchievements = unlockedAchievements
+                UnlockedAchievements = newlyUnlockedAchievements
             };
 
             return Results.Ok(response);

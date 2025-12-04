@@ -70,6 +70,12 @@ public class GameAccessorClient : IGameAccessorClient
     {
         try
         {
+            if (pageSize > 100)
+            {
+                _logger.LogWarning("PageSize {PageSize} exceeds maximum allowed (100). Capping to 100.", pageSize);
+                pageSize = 100;
+            }
+
             _logger.LogInformation(
                 "Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}, FromDate={FromDate}, ToDate={ToDate}",
                 studentId, summary, page, pageSize, getPending, fromDate, toDate);
@@ -84,12 +90,12 @@ public class GameAccessorClient : IGameAccessorClient
 
             if (fromDate.HasValue)
             {
-                queryParams.Add($"fromDate={fromDate.Value:O}");
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             if (toDate.HasValue)
             {
-                queryParams.Add($"toDate={toDate.Value:O}");
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             var queryString = string.Join("&", queryParams);
@@ -123,6 +129,17 @@ public class GameAccessorClient : IGameAccessorClient
 
             return result;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            _logger.LogError(ex, "Bad request to Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, summary, page, pageSize, getPending, fromDate, toDate);
+
+            return new GetHistoryAccessorResponse
+            {
+                Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
+            };
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
@@ -151,12 +168,12 @@ public class GameAccessorClient : IGameAccessorClient
 
             if (fromDate.HasValue)
             {
-                queryParams.Add($"fromDate={fromDate.Value:O}");
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             if (toDate.HasValue)
             {
-                queryParams.Add($"toDate={toDate.Value:O}");
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             var queryString = string.Join("&", queryParams);
@@ -175,7 +192,8 @@ public class GameAccessorClient : IGameAccessorClient
                     Items = new List<ExerciseMistakes>(),
                     Page = page,
                     PageSize = pageSize,
-                    TotalCount = 0
+                    TotalCount = 0,
+                    HasNextPage = false
                 };
             }
 
@@ -187,7 +205,8 @@ public class GameAccessorClient : IGameAccessorClient
                 Items = result.Items,
                 Page = result.Page,
                 PageSize = result.PageSize,
-                TotalCount = result.TotalCount
+                TotalCount = result.TotalCount,
+                HasNextPage = result.HasNextPage
             };
         }
         catch (Exception ex)
@@ -198,7 +217,8 @@ public class GameAccessorClient : IGameAccessorClient
                 Items = new List<ExerciseMistakes>(),
                 Page = page,
                 PageSize = pageSize,
-                TotalCount = 0
+                TotalCount = 0,
+                HasNextPage = false
             };
         }
     }

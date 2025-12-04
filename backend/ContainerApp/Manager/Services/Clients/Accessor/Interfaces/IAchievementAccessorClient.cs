@@ -5,7 +5,7 @@ namespace Manager.Services.Clients.Accessor.Interfaces;
 public interface IAchievementAccessorClient
 {
     Task<IReadOnlyList<AchievementAccessorModel>> GetAllActiveAchievementsAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default);
-    Task<IReadOnlyDictionary<Guid, DateTime>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default);
+    Task<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default);
     Task UnlockAchievementAsync(Guid userId, Guid achievementId, CancellationToken ct = default);
     Task<GetUserProgressAccessorResponse?> GetUserProgressAsync(Guid userId, string feature, CancellationToken ct = default);
     Task UpdateUserProgressAsync(Guid userId, UpdateUserProgressAccessorRequest request, CancellationToken ct = default);

@@ -29,12 +29,12 @@ public class WordCardsAccessorClient : IWordCardsAccessorClient
 
             if (fromDate.HasValue)
             {
-                queryParams.Add($"fromDate={fromDate.Value:O}");
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             if (toDate.HasValue)
             {
-                queryParams.Add($"toDate={toDate.Value:O}");
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
             }
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
