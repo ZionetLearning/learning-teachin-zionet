@@ -426,6 +426,20 @@
           "deleteFailed": "נכשל במחיקת תמונת הפרופיל. אנא נסה שוב."
         }
       },
+      "summary": {
+        "title": "סיכומי תלמיד",
+        "subTitle": "עקוב אחר התקדמות והישגים לאורך זמן",
+        "periodOverview": "סיכום",
+        "selectPeriod": "בחר תקופה",
+        "totalAttempts": "ניסיונות כוללים",
+        "wordsLearned": "מילים שנלמדו",
+        "achievements": "הישגים",
+        "practiceDays": "ימי תרגול",
+        "thisWeek": "השבוע",
+        "lastWeek": "שבוע שעבר",
+        "thisMonth": "החודש",
+        "lastMonth": "חודש שעבר"
+      },
       "tasks": {
         "title": "ניהול משימות",
         "tasks": "משימות",
@@ -706,7 +720,8 @@
       "users": "משתמשים",
       "tasks": "משימות",
       "profile": "פרופיל",
-      "myPracticeMistakes": "טעויות התרגול שלי",
+      "summary": "סיכום",
+      "myPracticeMistakes": "טעויות בתרגול",
       "studentPracticeHistory": "היסטוריית תרגול",
       "wordCards": "כרטיסיות מילים",
       "wordCardsChallenge": "אתגר כרטיסי מילים",

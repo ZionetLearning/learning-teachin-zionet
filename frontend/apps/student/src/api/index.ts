@@ -7,3 +7,4 @@ export * from "./game-config";
 export * from "./word-card";
 export * from "./mistake-explanation";
 export * from "./achievements";
+export * from "./summary";
