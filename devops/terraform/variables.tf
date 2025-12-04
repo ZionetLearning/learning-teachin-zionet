@@ -112,87 +112,6 @@ variable "tavily_api_key" {
 
 #------------- Application Secret Variables -------------
 # Azure OpenAI API Key
-variable "azure_openai_api_key" {
-  type        = string
-  sensitive   = true
-  description = "Azure OpenAI API key for engine service"
-  default     = null
-}
-
-# Azure Speech Service Key
-variable "azure_speech_key" {
-  type        = string
-  sensitive   = true
-  description = "Azure Speech Service key for accessor and engine services"
-  default     = null
-}
-
-# JWT configuration secrets
-variable "jwt_secret" {
-  type        = string
-  sensitive   = true
-  description = "JWT signing secret for manager service"
-  default     = null
-}
-
-variable "jwt_issuer" {
-  type        = string
-  description = "JWT issuer for authentication"
-  default     = "TeachinLearningPlatform"
-}
-
-variable "jwt_audience" {
-  type        = string
-  description = "JWT audience for authentication"
-  default     = "TeachinLearningPlatform"
-}
-
-variable "jwt_refresh_token_hash_key" {
-  type        = string
-  sensitive   = true
-  description = "JWT refresh token hash key for manager service"
-  default     = null
-}
-
-
-# brevo
-variable "brevo_address" {
-  type        = string
-  sensitive   = true
-  description = "Brevo Mailing API address"
-  default     = null
-}
-
-variable "brevo_host" {
-  type        = string
-  sensitive   = true
-  description = "Brevo Mailing SMTP host"
-  default     = null
-}
-
-variable "brevo_port" {
-  type        = string
-  sensitive   = true
-  description = "Brevo Mailing SMTP port"
-  default     = null
-}
-
-variable "brevo_username" {
-  type        = string
-  sensitive   = true
-  description = "Brevo Mailing SMTP username"
-  default     = null
-}
-
-variable "brevo_password" {
-  type        = string
-  sensitive   = true
-  description = "Brevo Mailing SMTP password"
-  default     = null
-}
-
-#------------- Application Secret Variables -------------
-# Azure OpenAI API Key
 # variable "azure_openai_api_key" {
 #   type        = string
 #   sensitive   = true
@@ -234,6 +153,44 @@ variable "brevo_password" {
 #   description = "JWT refresh token hash key for manager service"
 #   default     = null
 # }
+
+
+# brevo
+variable "brevo_address" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing API address"
+  default     = null
+}
+
+variable "brevo_host" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP host"
+  default     = null
+}
+
+variable "brevo_port" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP port"
+  default     = null
+}
+
+variable "brevo_username" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP username"
+  default     = null
+}
+
+variable "brevo_password" {
+  type        = string
+  sensitive   = true
+  description = "Brevo Mailing SMTP password"
+  default     = null
+}
+
 
 
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
