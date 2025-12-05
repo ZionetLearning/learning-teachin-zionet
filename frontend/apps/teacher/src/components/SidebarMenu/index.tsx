@@ -13,6 +13,7 @@ import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
 import { PreferredLanguageCode } from "@app-providers";
 import { useUpdateUserLanguage } from "@app-providers/api";
+import EmailIcon from '@mui/icons-material/Email';
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
@@ -62,6 +63,12 @@ export const SidebarMenu = () => {
     {
       label: t("sidebar.studentPracticeHistory"),
       icon: <HistoryIcon />,
+      path: "/student-practice-history",
+      testId: "sidebar-student-practice-history",
+    },
+    {
+      label: t("sidebar.emails"),
+      icon: <EmailIcon />,
       path: "/student-practice-history",
       testId: "sidebar-student-practice-history",
     },

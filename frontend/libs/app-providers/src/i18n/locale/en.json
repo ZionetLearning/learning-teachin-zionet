@@ -717,7 +717,8 @@
       "lightMode": "Light Mode",
       "darkMode": "Dark Mode",
       "systemDefault": "System Default",
-      "classes": "Classes"
+      "classes": "Classes",
+      "emails": "Emails"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

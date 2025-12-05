@@ -717,7 +717,8 @@
       "lightMode": "מצב בהיר",
       "darkMode": "מצב כהה",
       "systemDefault": "מצב מערכת",
-      "classes": "כיתות"
+      "classes": "כיתות",
+      "emails": "אימיילים"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",
