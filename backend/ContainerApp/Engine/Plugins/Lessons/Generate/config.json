@@ -1,0 +1,13 @@
+{
+  "type": "prompt",
+  "template_format": "semantic-kernel",
+  "description": "Generate a structured educational lesson as JSON",
+  "input_variables": [
+    {
+      "name": "topic",
+      "description": "The subject or theme for the lesson",
+      "is_required": true
+    }
+  ]
+}
+

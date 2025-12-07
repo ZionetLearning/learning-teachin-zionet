@@ -44,6 +44,7 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ILessonGeneratorService, LessonGeneratorService>();
 
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
@@ -157,6 +158,45 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
     return kernel;
 });
 
+builder.Services.AddKeyedSingleton("lessons", (sp, key) =>
+{
+    var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
+    var kb = Kernel.CreateBuilder()
+        .AddAzureOpenAIChatCompletion(
+            deploymentName: cfg.DeploymentName,
+            endpoint: cfg.Endpoint,
+            apiKey: cfg.ApiKey);
+
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelLessonsPluginRegistration");
+
+    var lessonsDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Lessons");
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(lessonsDir, "Lessons");
+        logger.LogInformation("Prompt plugin 'Lessons' loaded from {Dir}", lessonsDir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", lessonsDir);
+    }
+
+    var kernel = kb.Build();
+
+    try
+    {
+        var info = string.Join("; ", kernel.Plugins.Select(p =>
+            $"{p.Name}: [" + string.Join(", ", p.Select(f => f.Name)) + "]"));
+        logger.LogInformation("Loaded SK plugins & functions for lessons: {Info}", info);
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Failed to enumerate SK plugins/functions for lessons");
+    }
+
+    return kernel;
+});
+
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
@@ -179,5 +219,6 @@ app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
 app.MapAiEndpoints();
+app.MapLessonsEndpoints();
 
 app.Run();

@@ -34,6 +34,9 @@
     <None Include="Plugins\WordExplain\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Plugins\Lessons\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="Constants\Words\hintsEasy.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
