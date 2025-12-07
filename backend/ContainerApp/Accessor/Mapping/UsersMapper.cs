@@ -103,7 +103,7 @@ public static class UsersMapper
             PreferredLanguageCode = request.PreferredLanguageCode,
             HebrewLevelValue = request.HebrewLevelValue,
             Role = request.Role,
-            Interests = request.Interests?.ToList(),
+            Interests = request.Interests,
             AvatarPath = request.AvatarPath,
             AvatarContentType = request.AvatarContentType,
             ClearAvatar = request.ClearAvatar,
