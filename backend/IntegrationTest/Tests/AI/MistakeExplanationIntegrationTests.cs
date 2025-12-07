@@ -33,7 +33,7 @@ public class MistakeExplanationIntegrationTests(
         OutputHelper.WriteLine("Step 1: Generating split sentences for word order game");
         var sentenceRequest = new SentenceRequestDto
         {
-            Difficulty = (Manager.Models.Sentences.Difficulty)Difficulty.Easy,
+         Difficulty = (Manager.Models.Sentences.Difficulty)Difficulty.Easy,
          Nikud = false,
          Count = 1,
          GameType = GameType.WordOrderGame
