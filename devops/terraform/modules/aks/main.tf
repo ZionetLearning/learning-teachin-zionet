@@ -17,13 +17,14 @@ resource "azurerm_kubernetes_cluster" "main" {
     auto_scaling_enabled = true
     min_count            = var.stable_min_node_count
     max_count            = var.stable_max_node_count
-    
+    vnet_subnet_id       = var.aks_subnet_id
+
     # System pods and critical workloads
     node_labels = {
       "node-type" = "stable"
       "workload"  = "system"
     }
-    
+
     # Prevent eviction of stable nodes
     only_critical_addons_enabled = false
   }
@@ -32,8 +33,17 @@ resource "azurerm_kubernetes_cluster" "main" {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
-  
+
   oidc_issuer_enabled = true # Enable OIDC issuer for the cluster
+
+  network_profile {
+    network_plugin = "azure"
+    network_policy = "azure"
+  }
+
+  private_cluster_enabled             = var.enable_private_cluster
+  private_dns_zone_id                 = var.private_dns_zone_id
+  private_cluster_public_fqdn_enabled = false
 
 }
 
@@ -43,27 +53,27 @@ resource "azurerm_kubernetes_cluster_node_pool" "spot" {
   name                  = "spot"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
   vm_size               = var.spot_vm_size
-  
+
   # Auto-scaling configuration
   auto_scaling_enabled = true
   min_count            = var.spot_min_node_count
   max_count            = var.spot_max_node_count
-  
+
   # Spot instance configuration
   priority        = "Spot"
   eviction_policy = "Delete"
   spot_max_price  = var.spot_max_price # -1 means pay up to on-demand price
-  
+
   # Labels and taints for spot instances
   node_labels = {
-    "node-type"            = "spot"
+    "node-type"                             = "spot"
     "kubernetes.azure.com/scalesetpriority" = "spot"
   }
-  
+
   node_taints = [
     "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
   ]
-  
+
   tags = {
     Environment = var.prefix
     NodeType    = "spot"

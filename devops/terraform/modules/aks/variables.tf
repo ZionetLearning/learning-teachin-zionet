@@ -52,15 +52,15 @@ variable "spot_max_price" {
   description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
 }
 
-variable "identity_ids" {	
-  description = "Optional list of UserAssigned Identity IDs to use if type is UserAssigned"	
-  type        = list(string)	
-  default     = []	
-}	
+variable "identity_ids" {
+  description = "Optional list of UserAssigned Identity IDs to use if type is UserAssigned"
+  type        = list(string)
+  default     = []
+}
 
-variable "prefix" {	
-  type        = string	
-  description = "Prefix for naming resources"	
+variable "prefix" {
+  type        = string
+  description = "Prefix for naming resources"
   default     = "dev" # or whatever you want	
 }
 
@@ -68,4 +68,21 @@ variable "enable_spot_nodes" {
   type        = bool
   description = "Whether to create spot node pool (disabled for production)"
   default     = true
-}	
+}
+
+variable "aks_subnet_id" {
+  type        = string
+  description = "Subnet ID where AKS nodes will be placed"
+}
+
+variable "enable_private_cluster" {
+  type        = bool
+  description = "Enable private cluster (API server private endpoint)"
+  default     = true
+}
+
+variable "private_dns_zone_id" {
+  type        = string
+  description = "Private DNS Zone ID for the AKS API server (null = system-managed)"
+  default     = null
+}

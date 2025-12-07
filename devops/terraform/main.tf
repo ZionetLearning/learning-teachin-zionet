@@ -11,6 +11,35 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
+#----- Network Module (Phase 1 + Phase 2) -----
+# Single module handles both AKS VNet and optional DB VNet with peering
+module "network" {
+  count = var.use_shared_aks ? 0 : 1
+
+  source              = "./modules/network"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  vnet_name           = var.vnet_name
+  address_space       = var.vnet_address_space
+  aks_subnet_name     = var.aks_subnet_name
+  aks_subnet_prefix   = var.aks_subnet_prefix
+
+  # Phase 2: Separate DB VNet
+  enable_db_vnet        = var.enable_db_vnet
+  db_vnet_name          = var.db_vnet_name
+  db_vnet_location      = var.db_vnet_location
+  db_vnet_address_space = var.db_vnet_address_space
+  db_subnet_name        = var.db_subnet_name
+  db_subnet_prefix      = var.db_subnet_prefix
+
+  tags = {
+    Environment = var.environment_name
+    ManagedBy   = "terraform"
+  }
+
+  depends_on = [azurerm_resource_group.main]
+}
+
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
@@ -27,7 +56,13 @@ module "aks" {
   cluster_name        = var.aks_cluster_name
   prefix              = var.environment_name
   enable_spot_nodes   = var.environment_name != "prod" # Disable spot nodes for production
-  depends_on          = [azurerm_resource_group.main]
+
+  # Phase 1: Wire to private network
+  aks_subnet_id          = module.network[0].aks_subnet_id
+  enable_private_cluster = var.enable_private_cluster
+  private_dns_zone_id    = var.private_dns_zone_id
+
+  depends_on = [module.network]
 }
 
 # Local values to determine which cluster to use
@@ -130,6 +165,13 @@ locals {
   # Use the variable from tfvars to determine if using shared postgres
   use_shared_postgres = var.use_shared_postgres
   postgres_server_rg  = var.use_shared_postgres ? "dev-zionet-learning-2025" : azurerm_resource_group.main.name
+
+  # DB subnet: explicit var > network module output (phase 1 or 2) > null
+  postgres_delegated_subnet_id = (
+    var.delegated_subnet_id != null ? var.delegated_subnet_id :
+    !var.use_shared_aks ? module.network[0].db_subnet_id :
+    null
+  )
 }
 
 # Reference to shared PostgreSQL server (for non-dev environments)
@@ -151,7 +193,7 @@ module "database" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  delegated_subnet_id = var.delegated_subnet_id
+  delegated_subnet_id = local.postgres_delegated_subnet_id
 
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
@@ -159,7 +201,7 @@ module "database" {
   existing_server_id  = null
   use_shared_postgres = false
 
-  depends_on = [azurerm_resource_group.main]
+  depends_on = [azurerm_resource_group.main, module.network, module.network_db]
 }
 
 # Create database on shared server for non-dev environments

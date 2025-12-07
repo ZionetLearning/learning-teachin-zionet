@@ -298,3 +298,83 @@ variable "enable_langfuse" {
   type        = bool
   default     = true
 }
+
+#------------- Networking / VNet Variables (Phase 1: AKS Private Network) -------------
+variable "vnet_name" {
+  description = "Virtual network name for AKS"
+  type        = string
+  default     = "teachin-aks-vnet"
+}
+
+variable "vnet_address_space" {
+  description = "Address space for the virtual network"
+  type        = list(string)
+  default     = ["10.10.0.0/16"]
+}
+
+variable "aks_subnet_name" {
+  description = "Subnet name for AKS nodes"
+  type        = string
+  default     = "aks-subnet"
+}
+
+variable "aks_subnet_prefix" {
+  description = "CIDR for AKS subnet"
+  type        = string
+  default     = "10.10.1.0/24"
+}
+
+variable "include_db_subnet" {
+  description = "Include delegated DB subnet in this VNet (phase 1). Set false for separate DB VNet (phase 2)."
+  type        = bool
+  default     = true
+}
+
+variable "db_subnet_name" {
+  description = "Database subnet name"
+  type        = string
+  default     = "db-subnet"
+}
+
+variable "db_subnet_prefix" {
+  description = "CIDR for database subnet"
+  type        = string
+  default     = "10.10.2.0/24"
+}
+
+variable "enable_private_cluster" {
+  description = "Enable private AKS cluster (API server not exposed to internet)"
+  type        = bool
+  default     = true
+}
+
+variable "private_dns_zone_id" {
+  description = "Private DNS Zone ID for private cluster. Use null for system-managed zone."
+  type        = string
+  default     = null
+}
+
+#------------- Phase 2: Separate Database VNet Variables -------------
+variable "enable_db_vnet" {
+  description = "Enable separate database VNet in different region (phase 2). Set true to create DB VNet, false to use DB subnet in main VNet (phase 1)."
+  type        = bool
+  default     = false
+}
+
+variable "db_vnet_name" {
+  description = "Name of the separate database VNet (phase 2)"
+  type        = string
+  default     = "teachin-db-vnet"
+}
+
+variable "db_vnet_location" {
+  description = "Location for the database VNet (e.g., Israel Central)"
+  type        = string
+  default     = "Israel Central"
+}
+
+variable "db_vnet_address_space" {
+  description = "Address space for the database VNet"
+  type        = list(string)
+  default     = ["10.100.0.0/16"]
+}
