@@ -62,4 +62,10 @@ variable "prefix" {
   type        = string	
   description = "Prefix for naming resources"	
   default     = "dev" # or whatever you want	
+}
+
+variable "enable_spot_nodes" {
+  type        = bool
+  description = "Whether to create spot node pool (disabled for production)"
+  default     = true
 }	

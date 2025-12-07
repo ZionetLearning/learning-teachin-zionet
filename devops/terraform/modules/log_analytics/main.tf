@@ -1,6 +1,6 @@
 # ------------- Log Analytics Workspace -----------------------
 resource "azurerm_log_analytics_workspace" "main" {
-  count               = var.environment_name == "dev" ? 1 : 0
+  count               = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
   name                = "${var.environment_name}-laworkspace"
   location            = var.location
   resource_group_name = var.resource_group_name

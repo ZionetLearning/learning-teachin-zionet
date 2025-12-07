@@ -2,7 +2,6 @@
 set -euo pipefail
 
 NAMESPACE="devops-tools"
-PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
 ENVIRONMENT_NAME="${1:-dev}"
 ADMIN_EMAIL="${2:-admin@teachin.local}"
 ADMIN_PASSWORD="${3:-ChangeMe123!}"
@@ -11,8 +10,20 @@ PG_PASSWORD="${5:-postgres}"
 SMTP_USER="${6:-}"
 SMTP_PASSWORD="${7:-}"
 
-echo "🎯 Deploying Langfuse into $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
+# Environment-specific configuration
+if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+  PG_HOST="prod-pg-zionet-learning.postgres.database.azure.com"
+  DOMAIN="teachin-prod.westeurope.cloudapp.azure.com"
+  DOMAIN_SECRET="teachin-prod-tls"
+else
+  PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
+  DOMAIN="teachin.westeurope.cloudapp.azure.com"
+  DOMAIN_SECRET="teachin-tls"
+fi
+
+echo "🎯 Deploying Langfuse into $NAMESPACE (Environment: $ENVIRONMENT_NAME)"
 echo "📊 PostgreSQL Host: $PG_HOST"
+echo "🌐 Domain: $DOMAIN"
 echo "👤 Using PostgreSQL User: $PG_USERNAME"
 
 helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
@@ -26,7 +37,7 @@ ACTION="install"
 if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
   echo "🔄 Existing deployment found. Uninstalling for clean reinstall..."
   helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
-  kubectl delete pvc --all -n "$NAMESPACE" --ignore-not-found=true
+  # Removed dangerous 'kubectl delete pvc --all'
   sleep 5
 fi
 
@@ -34,7 +45,7 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
-  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set langfuse.nextauth.url="https://$DOMAIN/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
@@ -120,90 +131,86 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.worker.livenessProbe.timeoutSeconds=30 \
   --set langfuse.worker.readinessProbe.initialDelaySeconds=60 \
   --set langfuse.worker.readinessProbe.timeoutSeconds=30 \
-  --set langfuse.additionalEnv[0].name="DISABLE_LIVENESS_PROBE" \
+  --set langfuse.additionalEnv[0].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
   --set-string langfuse.additionalEnv[0].value="true" \
-  --set langfuse.additionalEnv[1].name="DISABLE_READINESS_PROBE" \
+  --set langfuse.additionalEnv[1].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[1].value="true" \
-  --set langfuse.additionalEnv[2].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
+  --set langfuse.additionalEnv[2].name="AUTH_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[2].value="true" \
-  --set langfuse.additionalEnv[3].name="DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[3].value="true" \
-  --set langfuse.additionalEnv[4].name="AUTH_DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[4].value="true" \
-  --set langfuse.additionalEnv[5].name="NEXT_PUBLIC_BASE_PATH" \
-  --set-string langfuse.additionalEnv[5].value="/langfuse" \
-  --set langfuse.additionalEnv[6].name="EMAIL_PROVIDER" \
-  --set-string langfuse.additionalEnv[6].value="smtp" \
-  --set langfuse.additionalEnv[7].name="SMTP_CONNECTION_URL" \
-  --set-string langfuse.additionalEnv[7].value="smtps://$SMTP_USER:$SMTP_PASSWORD@smtp.gmail.com:465" \
-  --set langfuse.additionalEnv[8].name="SMTP_HOST" \
-  --set-string langfuse.additionalEnv[8].value="smtp.gmail.com" \
-  --set langfuse.additionalEnv[9].name="SMTP_PORT" \
-  --set-string langfuse.additionalEnv[9].value="465" \
-  --set langfuse.additionalEnv[10].name="SMTP_USER" \
-  --set-string langfuse.additionalEnv[10].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[11].name="SMTP_PASSWORD" \
-  --set-string langfuse.additionalEnv[11].value="$SMTP_PASSWORD" \
-  --set langfuse.additionalEnv[12].name="SMTP_SECURE" \
-  --set-string langfuse.additionalEnv[12].value="true" \
-  --set langfuse.additionalEnv[13].name="SMTP_FROM" \
-  --set-string langfuse.additionalEnv[13].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[14].name="SMTP_REPLY_TO" \
-  --set-string langfuse.additionalEnv[14].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[15].name="SMTP_REPLY_TO_NAME" \
-  --set-string langfuse.additionalEnv[15].value="TeachIn Support" \
-  --set langfuse.additionalEnv[16].name="SMTP_POOL" \
-  --set-string langfuse.additionalEnv[16].value="true" \
-  --set langfuse.additionalEnv[17].name="SMTP_MAX_CONNECTIONS" \
-  --set-string langfuse.additionalEnv[17].value="5" \
-  --set langfuse.additionalEnv[18].name="SMTP_MAX_MESSAGES" \
-  --set-string langfuse.additionalEnv[18].value="100" \
-  --set langfuse.additionalEnv[19].name="SMTP_RATE_DELTA" \
-  --set-string langfuse.additionalEnv[19].value="1000" \
-  --set langfuse.additionalEnv[20].name="SMTP_RATE_LIMIT" \
-  --set-string langfuse.additionalEnv[20].value="5" \
-  --set langfuse.additionalEnv[21].name="AUTH_SMTP_USER" \
-  --set-string langfuse.additionalEnv[21].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[22].name="AUTH_SMTP_PASS" \
-  --set-string langfuse.additionalEnv[22].value="$SMTP_PASSWORD" \
-  --set langfuse.additionalEnv[23].name="SMTP_DEBUG" \
-  --set-string langfuse.additionalEnv[23].value="false" \
-  --set langfuse.additionalEnv[24].name="SMTP_LOG_LEVEL" \
-  --set-string langfuse.additionalEnv[24].value="info" \
-  --set langfuse.additionalEnv[25].name="SMTP_LOGGER" \
-  --set-string langfuse.additionalEnv[25].value="true" \
-  --set langfuse.additionalEnv[26].name="NEXT_PUBLIC_INVITE_URL" \
-  --set-string langfuse.additionalEnv[26].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
-  --set langfuse.additionalEnv[27].name="NEXTAUTH_INVITATION_EMAIL_SUBJECT" \
-  --set-string langfuse.additionalEnv[27].value="You have been invited to TeachIn's Langfuse" \
-  --set langfuse.additionalEnv[28].name="NEXTAUTH_INVITATION_EMAIL_TEMPLATE" \
-  --set-string langfuse.additionalEnv[28].value="<p>You have been invited to join TeachIn's Langfuse instance.</p><p>Click the button below to accept the invitation:</p>" \
-  --set langfuse.additionalEnv[29].name="INVITE_FROM_NAME" \
-  --set-string langfuse.additionalEnv[29].value="TeachIn Admin" \
-  --set langfuse.additionalEnv[30].name="INVITE_FROM_EMAIL" \
-  --set-string langfuse.additionalEnv[30].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[31].name="NEXT_PUBLIC_CONTACT_EMAIL" \
+  --set langfuse.additionalEnv[3].name="NEXT_PUBLIC_BASE_PATH" \
+  --set-string langfuse.additionalEnv[3].value="/langfuse" \
+  --set langfuse.additionalEnv[4].name="EMAIL_PROVIDER" \
+  --set-string langfuse.additionalEnv[4].value="smtp" \
+  --set langfuse.additionalEnv[5].name="SMTP_CONNECTION_URL" \
+  --set-string langfuse.additionalEnv[5].value="smtps://$SMTP_USER:$SMTP_PASSWORD@smtp.gmail.com:465" \
+  --set langfuse.additionalEnv[6].name="SMTP_HOST" \
+  --set-string langfuse.additionalEnv[6].value="smtp.gmail.com" \
+  --set langfuse.additionalEnv[7].name="SMTP_PORT" \
+  --set-string langfuse.additionalEnv[7].value="465" \
+  --set langfuse.additionalEnv[8].name="SMTP_USER" \
+  --set-string langfuse.additionalEnv[8].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[9].name="SMTP_PASSWORD" \
+  --set-string langfuse.additionalEnv[9].value="$SMTP_PASSWORD" \
+  --set langfuse.additionalEnv[10].name="SMTP_SECURE" \
+  --set-string langfuse.additionalEnv[10].value="true" \
+  --set langfuse.additionalEnv[11].name="SMTP_FROM" \
+  --set-string langfuse.additionalEnv[11].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[12].name="SMTP_REPLY_TO" \
+  --set-string langfuse.additionalEnv[12].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[13].name="SMTP_REPLY_TO_NAME" \
+  --set-string langfuse.additionalEnv[13].value="TeachIn Support" \
+  --set langfuse.additionalEnv[14].name="SMTP_POOL" \
+  --set-string langfuse.additionalEnv[14].value="true" \
+  --set langfuse.additionalEnv[15].name="SMTP_MAX_CONNECTIONS" \
+  --set-string langfuse.additionalEnv[15].value="5" \
+  --set langfuse.additionalEnv[16].name="SMTP_MAX_MESSAGES" \
+  --set-string langfuse.additionalEnv[16].value="100" \
+  --set langfuse.additionalEnv[17].name="SMTP_RATE_DELTA" \
+  --set-string langfuse.additionalEnv[17].value="1000" \
+  --set langfuse.additionalEnv[18].name="SMTP_RATE_LIMIT" \
+  --set-string langfuse.additionalEnv[18].value="5" \
+  --set langfuse.additionalEnv[19].name="AUTH_SMTP_USER" \
+  --set-string langfuse.additionalEnv[19].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[20].name="AUTH_SMTP_PASS" \
+  --set-string langfuse.additionalEnv[20].value="$SMTP_PASSWORD" \
+  --set langfuse.additionalEnv[21].name="SMTP_DEBUG" \
+  --set-string langfuse.additionalEnv[21].value="false" \
+  --set langfuse.additionalEnv[22].name="SMTP_LOG_LEVEL" \
+  --set-string langfuse.additionalEnv[22].value="info" \
+  --set langfuse.additionalEnv[23].name="SMTP_LOGGER" \
+  --set-string langfuse.additionalEnv[23].value="true" \
+  --set langfuse.additionalEnv[24].name="NEXT_PUBLIC_INVITE_URL" \
+  --set-string langfuse.additionalEnv[24].value="https://$DOMAIN/langfuse" \
+  --set langfuse.additionalEnv[25].name="NEXTAUTH_INVITATION_EMAIL_SUBJECT" \
+  --set-string langfuse.additionalEnv[25].value="You have been invited to TeachIn's Langfuse" \
+  --set langfuse.additionalEnv[26].name="NEXTAUTH_INVITATION_EMAIL_TEMPLATE" \
+  --set-string langfuse.additionalEnv[26].value="<p>You have been invited to join TeachIn's Langfuse instance.</p><p>Click the button below to accept the invitation:</p>" \
+  --set langfuse.additionalEnv[27].name="INVITE_FROM_NAME" \
+  --set-string langfuse.additionalEnv[27].value="TeachIn Admin" \
+  --set langfuse.additionalEnv[28].name="INVITE_FROM_EMAIL" \
+  --set-string langfuse.additionalEnv[28].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[29].name="NEXT_PUBLIC_CONTACT_EMAIL" \
+  --set-string langfuse.additionalEnv[29].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[30].name="EMAIL_FROM_NAME" \
+  --set-string langfuse.additionalEnv[30].value="TeachIn" \
+  --set langfuse.additionalEnv[31].name="EMAIL_FROM_ADDRESS" \
   --set-string langfuse.additionalEnv[31].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[32].name="EMAIL_FROM_NAME" \
-  --set-string langfuse.additionalEnv[32].value="TeachIn" \
-  --set langfuse.additionalEnv[33].name="EMAIL_FROM_ADDRESS" \
-  --set-string langfuse.additionalEnv[33].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[34].name="EMAIL_FROM" \
-  --set-string langfuse.additionalEnv[34].value="$SMTP_USER" \
-  --set langfuse.additionalEnv[35].name="MEMBERSHIP_INVITATION_EMAIL_SUBJECT" \
-  --set-string langfuse.additionalEnv[35].value="You have been invited to join {{organizationName}} on Langfuse" \
-  --set langfuse.additionalEnv[36].name="MEMBERSHIP_INVITATION_EMAIL_TEMPLATE" \
-  --set-string langfuse.additionalEnv[36].value="<h2>Join {{organizationName}} on Langfuse</h2><p>Hello,</p><p><b>{{inviterName}}</b> ({{inviterEmail}}) has invited you to join <b>{{organizationName}}</b> on Langfuse.</p><p>Click the link below to accept:</p><p><a href=\"{{url}}\">Accept Invitation</a></p><p>Or copy this URL: {{url}}</p><p><small>This invitation was sent to {{inviteeEmail}}</small></p>" \
-  --set langfuse.additionalEnv[37].name="INVITE_URL_BASE" \
-  --set-string langfuse.additionalEnv[37].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
-  --set langfuse.additionalEnv[38].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
+  --set langfuse.additionalEnv[32].name="EMAIL_FROM" \
+  --set-string langfuse.additionalEnv[32].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[33].name="MEMBERSHIP_INVITATION_EMAIL_SUBJECT" \
+  --set-string langfuse.additionalEnv[33].value="You have been invited to join {{organizationName}} on Langfuse" \
+  --set langfuse.additionalEnv[34].name="MEMBERSHIP_INVITATION_EMAIL_TEMPLATE" \
+  --set-string langfuse.additionalEnv[34].value="<h2>Join {{organizationName}} on Langfuse</h2><p>Hello,</p><p><b>{{inviterName}}</b> ({{inviterEmail}}) has invited you to join <b>{{organizationName}}</b> on Langfuse.</p><p>Click the link below to accept:</p><p><a href=\"{{url}}\">Accept Invitation</a></p><p>Or copy this URL: {{url}}</p><p><small>This invitation was sent to {{inviteeEmail}}</small></p>" \
+  --set langfuse.additionalEnv[35].name="INVITE_URL_BASE" \
+  --set-string langfuse.additionalEnv[35].value="https://$DOMAIN/langfuse" \
+  --set langfuse.additionalEnv[36].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
+  --set-string langfuse.additionalEnv[36].value="true" \
+  --set langfuse.additionalEnv[37].name="AUTH_DISABLE_SIGNUP_DEFAULT_DOMAIN" \
+  --set-string langfuse.additionalEnv[37].value="true" \
+  --set langfuse.additionalEnv[38].name="INVITATION_REQUIRED" \
   --set-string langfuse.additionalEnv[38].value="true" \
-  --set langfuse.additionalEnv[39].name="AUTH_DISABLE_SIGNUP_DEFAULT_DOMAIN" \
+  --set langfuse.additionalEnv[39].name="VALIDATE_INVITATION_EMAIL" \
   --set-string langfuse.additionalEnv[39].value="true" \
-  --set langfuse.additionalEnv[40].name="INVITATION_REQUIRED" \
-  --set-string langfuse.additionalEnv[40].value="true" \
-  --set langfuse.additionalEnv[41].name="VALIDATE_INVITATION_EMAIL" \
-  --set-string langfuse.additionalEnv[41].value="true" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
@@ -301,7 +308,7 @@ echo "✅ Migrations applied."
 echo "🔐 Creating admin user: $ADMIN_EMAIL"
 
 # Check if user already exists and get existing hash
-echo "� Checking if user exists: $ADMIN_EMAIL"
+echo " Checking if user exists: $ADMIN_EMAIL"
 
 EXISTING_HASH=$(kubectl run -n $NAMESPACE temp-check-user --image=postgres:16 --rm -i --restart=Never -- \
   psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
@@ -413,8 +420,15 @@ echo "🌐 Deploying Langfuse ingress..."
 INGRESS_FILE="../kubernetes/ingress/langfuse-ingress.yaml"
 
 if [ -f "$INGRESS_FILE" ]; then
-  echo "📁 Applying ingress from: $INGRESS_FILE"
-  kubectl apply -f "$INGRESS_FILE"
+  echo "📁 Processing ingress template: $INGRESS_FILE"
+  echo "🔧 Applying environment-specific configuration for $ENVIRONMENT_NAME"
+  
+  # Create temporary ingress file with environment-specific substitutions
+  TEMP_INGRESS_FILE="/tmp/langfuse-ingress-${ENVIRONMENT_NAME}.yaml"
+  sed "s/DOMAIN_PLACEHOLDER/$DOMAIN/g; s/DOMAIN_SECRET_PLACEHOLDER/$DOMAIN_SECRET/g" "$INGRESS_FILE" > "$TEMP_INGRESS_FILE"
+  
+  kubectl apply -f "$TEMP_INGRESS_FILE"
+  rm -f "$TEMP_INGRESS_FILE"
 else
   echo "⚠️  Ingress file not found at $INGRESS_FILE"
   echo "📝 You may need to create an ingress manually to expose Langfuse externally."
@@ -429,7 +443,7 @@ kubectl delete job --selector=app.kubernetes.io/name=langfuse -n "$NAMESPACE" --
 echo ""
 echo "🎉 Langfuse deployed successfully!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔗 Access URL: https://teachin.westeurope.cloudapp.azure.com/langfuse"
+echo "🔗 Access URL: https://$DOMAIN/langfuse"
 echo "👤 Admin Email: $ADMIN_EMAIL"
 echo "🔑 Admin Password: $ADMIN_PASSWORD"
 echo "📊 Environment: $ENVIRONMENT_NAME"

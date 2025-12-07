@@ -11,10 +11,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin.westeurope.cloudapp.azure.com
-      secretName: teachin-tls
+        - ${GRAFANA_DOMAIN:-teachin.westeurope.cloudapp.azure.com}
+      secretName: ${TLS_SECRET_NAME:-teachin-tls}
   rules:
-  - host: teachin.westeurope.cloudapp.azure.com
+  - host: ${GRAFANA_DOMAIN:-teachin.westeurope.cloudapp.azure.com}
     http:
       paths:
       - path: /grafana

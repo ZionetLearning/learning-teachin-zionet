@@ -26,6 +26,11 @@ on:
         description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
         default: ""
+      skip_infra_steps:
+        description: "Skip infrastructure steps (Redis, External Secrets, etc.)"
+        type: boolean
+        required: false
+        default: false
       use_keda:
         description: "Enable KEDA setup workflow"
         type: boolean
@@ -90,7 +95,7 @@ jobs:
         run: |
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           echo "🔍 DEBUG: ENVIRONMENT_NAME='$ENVIRONMENT_NAME'"
-          
+
           # Set TARGET_NAMESPACE as both shell variable (for this step) and env variable (for next steps)
           if [ -n "$ENVIRONMENT_NAME" ]; then
             echo "✅ ENVIRONMENT_NAME is not empty, using custom namespace"
@@ -101,7 +106,7 @@ jobs:
           fi
 
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          
+
           # Select values file based on environment
           # dev uses values.dev.yaml (spot disabled for stability)
           # prod uses values.prod.yaml (spot enabled explicitly)
@@ -116,26 +121,41 @@ jobs:
             echo "VALUES_FILE=devops/kubernetes/charts/values.template.yaml" >> $GITHUB_ENV
             echo "📋 Using values.template.yaml (spot enabled for $ENVIRONMENT_NAME)"
           fi
-          
+
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
 
-          # Shared AKS
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          # Set AKS cluster based on environment
+          if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "AKS_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-prod" >> $GITHUB_ENV
+            echo "🏭 Using Production AKS cluster"
+          else
+            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+            echo "🔧 Using Development AKS cluster"
+          fi
 
-          # PG (shared)
-          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          # Set PostgreSQL based on environment
+          if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "PG_DB=prod-pg-zionet-learning" >> $GITHUB_ENV
+            echo "PG_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "🗄️ Using Production PostgreSQL"
+          else
+            echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
+            echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "🗄️ Using Development PostgreSQL"
+          fi
 
           # Determine if infrastructure steps should be skipped
-          # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
-          # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [[ "${{ inputs.skip_infra_steps }}" == "false" ]]; then
-            echo "skip_infra_steps=false passed, running infrastructure"
-            echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
-          else
-            echo "Push event detected or manual dispatch update images workflow, skipping infrastructure"
+          # For workflow_dispatch: uses skip_infra_steps input (default: false = run infra)
+          # For workflow_call: uses skip_infra_steps input from caller
+          SKIP_INFRA="${{ inputs.skip_infra_steps || github.event.inputs.skip_infra_steps }}"
+          if [[ "$SKIP_INFRA" == "true" ]]; then
+            echo "skip_infra_steps=true, skipping infrastructure steps"
             echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_infra_steps=false, running infrastructure steps (Redis, External Secrets, etc.)"
+            echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
           fi
 
           # Redis (shared)
@@ -161,8 +181,8 @@ jobs:
               ;;
           esac
 
-          # Determine if Langfuse should be deployed (only for dev environment)
-          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+          # Determine if Langfuse should be deployed (dev and prod environments)
+          if [ "$ENVIRONMENT_NAME" = "dev" ] || [ "$ENVIRONMENT_NAME" = "prod" ]; then
             echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
             echo "deploy_langfuse=true"
           else
@@ -180,6 +200,14 @@ jobs:
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           kubectl create namespace "$ENVIRONMENT_NAME" --dry-run=client -o yaml | kubectl apply -f -
+
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      - name: Create Redis namespace (shared)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "Creating redis namespace for shared Redis instance..."
+          kubectl create namespace redis --dry-run=client -o yaml | kubectl apply -f -
+          echo "✅ redis namespace ready"
 
       - name: Check and fix Helm release status
         run: |
@@ -293,6 +321,70 @@ jobs:
 
           echo "✅ devops-tools namespace is ready"
 
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      # For Azure Redis: Remove this step and redis password will come from Key Vault via ExternalSecret
+      - name: Generate or retrieve Redis password for self-hosted Redis
+        id: redis_password
+        run: |
+          # Check if redis-secret already exists in redis namespace
+          EXISTING_PASSWORD=$(kubectl get secret redis-secret -n redis -o jsonpath='{.data.redis-password}' 2>/dev/null | base64 -d || echo "")
+
+          if [ -n "$EXISTING_PASSWORD" ]; then
+            echo "✅ Using existing Redis password from redis namespace"
+            REDIS_PASSWORD="$EXISTING_PASSWORD"
+          else
+            echo "🔧 Generating new Redis password (first deployment)"
+            REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+          fi
+
+          echo "::add-mask::$REDIS_PASSWORD"
+          echo "REDIS_PASSWORD=$REDIS_PASSWORD" >> $GITHUB_ENV
+          echo "✅ Redis password ready for environment: $ENVIRONMENT_NAME"
+
+      # COMMENT OUT THIS STEP if reverting to Azure Redis Cache resource
+      # For Azure Redis: Remove this step, uncomment Terraform redis module in devops/terraform/main.tf
+      - name: Deploy shared Redis instance
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "🚀 Deploying shared Redis instance to redis namespace..."
+
+          # Use helm template with --show-only to render ONLY Redis resources
+          # This avoids rendering app deployments and prevents Helm release conflicts
+          helm template redis-shared "$CHART_DIR" \
+            --namespace redis \
+            -f "$VALUES_FILE" \
+            --set redis.enabled=true \
+            --set redis.useAzureRedis=false \
+            --set redis.password="$REDIS_PASSWORD" \
+            --set global.environment="redis" \
+            --show-only templates/redis/redis-secret.yaml \
+            --show-only templates/redis/redis-pvc.yaml \
+            --show-only templates/redis/redis-service.yaml \
+            --show-only templates/redis/redis-statefulset.yaml \
+            | kubectl apply -f -
+
+          echo "✅ Redis resources applied"
+
+          # Verify Redis pod is running
+          echo "⏳ Waiting for Redis pod..."
+          kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=3m || true
+          kubectl get pods -n redis -l app=redis
+          echo "✅ Shared Redis deployment complete"
+
+      # CRITICAL: Copy Redis secret to target namespace for Dapr components
+      - name: Create Redis secret in target namespace
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          echo "📝 Creating redis-secret in $ENVIRONMENT_NAME namespace..."
+
+          # Create secret with the same password used for Redis deployment
+          kubectl create secret generic redis-secret \
+            --from-literal=redis-password="$REDIS_PASSWORD" \
+            --namespace="$ENVIRONMENT_NAME" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "✅ redis-secret created in $ENVIRONMENT_NAME namespace"
+
       - name: Helm template sanity (no Namespace objects)
         run: |
           # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
@@ -313,9 +405,11 @@ jobs:
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$ENVIRONMENT_NAME" \
+            --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
+            --set redis.password="$REDIS_PASSWORD" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda  || false }} \
@@ -337,6 +431,10 @@ jobs:
             LANGFUSE_ENABLED="false"
           fi
 
+          # For self-hosted Redis: Uses shared instance at redis.redis.svc.cluster.local:6379
+          # To revert to Azure Redis Cache: Set redis.useAzureRedis=true and remove --set redis.password line
+          echo "🔧 Deploying with self-hosted Redis on AKS (database index: $REDIS_DATABASE_INDEX)"
+
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$ENVIRONMENT_NAME" \
             -f "$VALUES_FILE" \
@@ -345,37 +443,37 @@ jobs:
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$ENVIRONMENT_NAME" \
+            --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
+            --set redis.password="$REDIS_PASSWORD" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda || false }} \
 
-      - name: Add Langfuse
-        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
-        run: |
-          echo "Deploying Langfuse..."
-          cd devops/helm-tools
-          echo "Applying Langfuse ingress..."
-          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
-          chmod +x langfuse.sh
-          
-          if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
-            echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
-            exit 1
-          fi
-          
-          ./langfuse.sh \
-            "$ENVIRONMENT_NAME" \
-            "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
-            "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
-            "${{ secrets.POSTGRES_USER }}" \
-            "${{ secrets.POSTGRES_PASSWORD }}" \
-            "${{ secrets.SMTP_USER }}" \
-            "${{ secrets.SMTP_PASSWORD }}"
+      # - name: Add Langfuse
+      #   if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
+      #   run: |
+      #     echo "Deploying Langfuse..."
+      #     cd devops/helm-tools
+      #     chmod +x langfuse.sh
 
-          echo "Langfuse deployment completed"
+      #     if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
+      #       echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
+      #       exit 1
+      #     fi
+
+      #     ./langfuse.sh \
+      #       "$ENVIRONMENT_NAME" \
+      #       "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
+      #       "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
+      #       "${{ secrets.POSTGRES_USER }}" \
+      #       "${{ secrets.POSTGRES_PASSWORD }}" \
+      #       "${{ secrets.SMTP_USER }}" \
+      #       "${{ secrets.SMTP_PASSWORD }}"
+
+      #     echo "Langfuse deployment completed"
 
       - name: Diagnostics (on failure)
         if: failure()

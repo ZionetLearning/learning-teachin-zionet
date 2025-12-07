@@ -1,0 +1,16 @@
+{{- if and .Values.redis.enabled (not .Values.redis.useAzureRedis) (eq .Release.Namespace .Values.redis.namespace) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.redis.namespace }}
+  labels:
+    app: redis
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: redis
+  type: ClusterIP
+{{- end }}
