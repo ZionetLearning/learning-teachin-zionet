@@ -21,7 +21,7 @@ public sealed record GetUserResponse
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public HebrewLevel? HebrewLevelValue { get; init; }
 
-    public List<string>? Interests { get; init; }
+    public List<string> Interests { get; init; } = [];
     public string? AcsUserId { get; init; }
     public string? AvatarPath { get; init; }
     public string? AvatarContentType { get; init; }
