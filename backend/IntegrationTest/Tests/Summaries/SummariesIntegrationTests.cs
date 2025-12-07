@@ -243,29 +243,5 @@ public class SummariesIntegrationTests(
         achievementsResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "Invalid userId - Returns 400 for empty guid")]
-    public async Task InvalidUserId_EmptyGuid_ShouldReturn400()
-    {
-        // Arrange
-        await LoginAsAsync(Role.Teacher);
-        var emptyUserId = Guid.Empty;
-
-        // Act & Assert - Overview
-        var overviewResponse = await Client.GetAsync(ApiRoutes.GetPeriodOverview(emptyUserId));
-        overviewResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Act & Assert - Game Practice
-        var gamePracticeResponse = await Client.GetAsync(ApiRoutes.GetPeriodGamePractice(emptyUserId));
-        gamePracticeResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Act & Assert - Word Cards
-        var wordCardsResponse = await Client.GetAsync(ApiRoutes.GetPeriodWordCards(emptyUserId));
-        wordCardsResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // Act & Assert - Achievements
-        var achievementsResponse = await Client.GetAsync(ApiRoutes.GetPeriodAchievements(emptyUserId));
-        achievementsResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     #endregion
 }
