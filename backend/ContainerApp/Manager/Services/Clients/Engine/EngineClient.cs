@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.Emails;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Models.Words;
@@ -286,6 +287,74 @@ public class EngineClient : IEngineClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send WordExplain request for '{Word}' to Engine", request.Word);
+            throw;
+        }
+    }
+
+    public async Task<(bool success, string message)> GenerateEmailDraftAsync(EmailDraftRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Inside: {Method} in {Class}, Subject={Subject}, Purpose={Purpose}",
+                nameof(GenerateEmailDraftAsync), nameof(EngineClient), request.Subject, request.Purpose);
+
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateEmailDraft,
+                Payload = payload
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            _logger.LogDebug(
+                "GenerateEmailDraft request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("GenerateEmailDraft request was canceled");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send GenerateEmailDraft request to Engine");
+            throw;
+        }
+    }
+
+    public async Task<(bool success, string message)> SendEmailAsync(SendEmailRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Inside: {Method} in {Class}, RecipientEmail={RecipientEmail}, Subject={Subject}",
+                nameof(SendEmailAsync), nameof(EngineClient), request.RecipientEmail, request.Subject);
+
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.SendEmail,
+                Payload = payload
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            _logger.LogDebug(
+                "SendEmail request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("SendEmail request was canceled");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send SendEmail request to Engine");
             throw;
         }
     }

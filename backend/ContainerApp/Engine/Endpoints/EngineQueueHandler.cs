@@ -7,12 +7,14 @@ using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.Games;
+using Engine.Models.Emails;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 using Engine.Models.Words;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+using Engine.Constants.Chat;
 
 namespace Engine.Endpoints;
 
@@ -27,6 +29,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
     private readonly IAccessorClient _accessorClient;
     private readonly IChatTitleService _chatTitleService;
     private readonly IWordExplainService _wordExplainService;
+    private readonly IEmailService _emailService;
     protected override MessageAction GetAction(Message message) => message.ActionName;
     protected override void Configure(RouteBuilder routes) => routes
         .On(MessageAction.CreateTask, HandleCreateTaskAsync)
@@ -36,7 +39,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.ProcessingExplainMistake, HandleProcessingExplainMistakeAsync)
         .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync)
-        .On(MessageAction.GenerateWordExplain, HandleWordExplainAsync);
+        .On(MessageAction.GenerateWordExplain, HandleWordExplainAsync)
+        .On(MessageAction.GenerateEmailDraft, HandleEmailDraftAsync)
+        .On(MessageAction.SendEmail, HandleSendEmailAsync);
     public EngineQueueHandler(
         DaprClient daprClient,
         ILogger<EngineQueueHandler> logger,
@@ -46,7 +51,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
         IChatTitleService chatTitleService,
-        IWordExplainService wordExplainService) : base(logger)
+        IWordExplainService wordExplainService,
+        IEmailService emailService) : base(logger)
     {
         _daprClient = daprClient;
         _logger = logger;
@@ -57,6 +63,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         _chatTitleService = chatTitleService;
         _sentencesService = sentencesService;
         _wordExplainService = wordExplainService;
+        _emailService = emailService;
     }
     private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
@@ -648,6 +655,118 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 cancellationToken);
 
             _logger.LogInformation("WordExplain completed for word '{Word}'", payload.Word);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
+    }
+
+    private async Task HandleEmailDraftAsync(
+        Message message,
+        IReadOnlyDictionary<string, string>? metadata,
+        Func<Task> renewLock,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<EmailDraftRequest>(message, _logger);
+
+            if (string.IsNullOrWhiteSpace(payload.Subject) || string.IsNullOrWhiteSpace(payload.Purpose))
+            {
+                throw new NonRetryableException("Message payload is required.");
+            }
+
+            _logger.LogInformation("Processing email draft generation, Purpose={Purpose}", payload.Purpose);
+
+            var emailPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.EmailDraftTemplate, cancellationToken);
+            string emailPromptContent;
+            if (emailPrompt?.Content != null)
+            {
+                emailPromptContent = emailPrompt.Content
+                    .Replace("{subject}", payload.Subject, StringComparison.Ordinal)
+                    .Replace("{purpose}", payload.Purpose, StringComparison.Ordinal)
+                    .Replace("{language}", payload.Language.ToString(), StringComparison.Ordinal);
+            }
+            else
+            {
+                _logger.LogWarning("Email draft prompt template not found, using fallback");
+                emailPromptContent = $$"""
+                You are a professional email writer.
+
+                Write a clear and professional email based on the following information:
+                - Subject: {payload.Subject}
+                - Purpose: {payload.Purpose}
+                - Language: {payload.Language}
+
+                Respond with **only** valid JSON in this format:
+                {
+                  "subject": "...",
+                  "body": "..."
+                }
+                """;
+
+            }
+
+            var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken) ?? throw new NonRetryableException("Email draft generation failed.");
+
+            await _publisher.CreateEmailDraftAsync(
+                payload.UserId.ToString(),
+                result,
+                message.ActionName,
+                cancellationToken);
+
+            _logger.LogInformation("Email draft generation completed successfully");
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
+    }
+
+    private async Task HandleSendEmailAsync(
+        Message message,
+        IReadOnlyDictionary<string, string>? metadata,
+        Func<Task> renewLock,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<SendEmailRequest>(message, _logger);
+            if (string.IsNullOrWhiteSpace(payload.RecipientEmail) ||
+                string.IsNullOrWhiteSpace(payload.Subject) ||
+                string.IsNullOrWhiteSpace(payload.Body))
+            {
+                throw new NonRetryableException("Message payload is required.");
+            }
+
+            _logger.LogInformation("Processing send email to {To}", payload.RecipientEmail);
+            await _emailService.SendEmailAsync(payload, cancellationToken);
+            _logger.LogInformation("Email sent successfully to {To}", payload.RecipientEmail);
         }
         catch (NonRetryableException ex)
         {

@@ -184,6 +184,12 @@ jobs:
         env:
           TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
           TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
+          TF_VAR_brevo_address: ${{ secrets.BREVO_ADDRESS }}
+          TF_VAR_brevo_host: ${{ secrets.BREVO_HOST }}
+          TF_VAR_brevo_port: ${{ secrets.BREVO_PORT }}
+          TF_VAR_brevo_username: ${{ secrets.BREVO_USERNAME }}
+          TF_VAR_brevo_password: ${{ secrets.BREVO_PASSWORD }}
+          
         run: terraform plan -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
@@ -192,6 +198,12 @@ jobs:
         env:
           TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
           TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
+          TF_VAR_brevo_address: ${{ secrets.BREVO_ADDRESS }}
+          TF_VAR_brevo_host: ${{ secrets.BREVO_HOST }}
+          TF_VAR_brevo_port: ${{ secrets.BREVO_PORT }}
+          TF_VAR_brevo_username: ${{ secrets.BREVO_USERNAME }}
+          TF_VAR_brevo_password: ${{ secrets.BREVO_PASSWORD }}
+
         run: |
           echo "Applying Terraform changes..."
           terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}

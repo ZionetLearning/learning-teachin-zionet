@@ -16,6 +16,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Engine.Models.Emails;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,12 +45,17 @@ builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
 
 builder.Services
     .AddOptions<TavilySettings>()
     .Bind(builder.Configuration.GetSection("Tavily"))
+    .ValidateDataAnnotations();
+
+builder.Services.AddOptions<EmailSettings>()
+    .Bind(builder.Configuration.GetSection("BrevoMailing"))
     .ValidateDataAnnotations();
 
 builder.Services.AddMemoryCache();

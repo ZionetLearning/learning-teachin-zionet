@@ -40,6 +40,10 @@
       "SentencesGenerateTemplate": {
         "Key": "prompts.sentences.generate.template",
         "Label": "production"
+      },
+      "EmailPrompt": {
+        "Key": "prompts.email.template",
+        "Label": "production"
       }
     }
   }

@@ -109,10 +109,6 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
-    avatars:
-      enabled: true
-      name: avatars-storage-secret
-      key: AvatarsStorageConnectionString
     jwt:
       name: manager-appsettings
       keys:
@@ -170,6 +166,12 @@ engine:
     Tavily__IncludeAnswer: "true"
     Tavily__IncludeRawContent: "false"
     Tavily__SearchDepth: "basic"
+    BrevoMailing__Name: "Learning Notification"
+    BrevoMailing__Address: ""
+    BrevoMailing__Host: ""
+    BrevoMailing__Port: ""
+    BrevoMailing__Username: ""
+    BrevoMailing__Password: ""
   secrets:
     serviceBus:
       name: azure-service-bus-secret
@@ -180,6 +182,11 @@ engine:
         openaiApiKey: AzureOpenAI__ApiKey
         speechKey: AzureSpeech__SubscriptionKey
         tavilyApiKey: Tavily__ApiKey
+        brevoAddress: BrevoMailing__Address
+        brevoHost: BrevoMailing__Host
+        brevoPort: BrevoMailing__Port
+        brevoUsername: BrevoMailing__Username
+        brevoPassword: BrevoMailing__Password
       data:
         - remote: engine-azureopenai-apikey
           key: AzureOpenAI__ApiKey
@@ -187,6 +194,16 @@ engine:
           key: AzureSpeech__SubscriptionKey
         - remote: engine-tavily-apikey
           key: Tavily__ApiKey
+        - remote: engine-brevo-address
+          key: BrevoMailing__Address
+        - remote: engine-brevo-host
+          key: BrevoMailing__Host
+        - remote: engine-brevo-port
+          key: BrevoMailing__Port
+        - remote: engine-brevo-username
+          key: BrevoMailing__Username
+        - remote: engine-brevo-password
+          key: BrevoMailing__Password
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage
@@ -221,6 +238,10 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+    avatars:
+      enabled: true
+      name: avatars-storage-secret
+      key: AvatarsStorageConnectionString
     speech:
       name: accessor-appsettings
       keys:

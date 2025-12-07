@@ -54,6 +54,7 @@ public class EngineQueueHandlerTests
         var log = new Mock<ILogger<EngineQueueHandler>>();
         var batcherLog = new Mock<ILogger<StreamingChatAIBatcher>>();
         var explainService = new Mock<IWordExplainService>(MockBehavior.Strict);
+        var emailService = new Mock<IEmailService>(MockBehavior.Strict);
 
         var sut = new EngineQueueHandler(
             dapr.Object,
@@ -64,8 +65,8 @@ public class EngineQueueHandlerTests
             accessorClient.Object,
             sentService.Object,
             titleService.Object,
-            explainService.Object
-        );
+            explainService.Object,
+            emailService.Object);
         return (dapr, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut);
     }
 
@@ -119,6 +120,125 @@ public class EngineQueueHandlerTests
         pub.VerifyNoOtherCalls();
         accessorClient.VerifyNoOtherCalls();
     }
+
+    //[Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
+    //public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
+    //{
+        //// Arrange
+        //var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
+
+        //var requestId = Guid.NewGuid().ToString();
+        //var threadId = Guid.NewGuid();
+        //var chatName = "chat name";
+        //var userId = Guid.NewGuid();
+        //var userMsg = "hello";
+        //var textAnswer = "world";
+
+        //var engineReq = new EngineChatRequest
+        //{
+        //    RequestId = requestId,
+        //    ThreadId = threadId,
+        //    UserId = userId,
+        //    UserMessage = userMsg,
+        //    ChatType = ChatType.Default,
+        //    SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+        //    TtlSeconds = 120,
+        //};
+
+        //var snapshotFromAccessor = new HistorySnapshotDto
+        //{
+        //    ThreadId = threadId,
+        //    UserId = userId,
+        //    ChatType = "default",
+        //    History = EmptyHistory()
+        //};
+
+        //accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
+        //        .ReturnsAsync(snapshotFromAccessor);
+
+        //var history = new ChatHistory();
+        //history.AddSystemMessage("You are a helpful assistant.");
+        //history.AddUserMessageNow(userMsg);
+        //var expectedAiReq = new ChatAiServiceRequest
+        //{
+        //    RequestId = requestId,
+        //    ThreadId = threadId,
+        //    ChatType = ChatType.Default,
+        //    UserId = userId,
+        //    SentAt = engineReq.SentAt,
+        //    TtlSeconds = 120,
+        //    History = history
+        //};
+
+
+        //var updatedHistory = history;
+
+        //updatedHistory.AddAssistantMessage("World");
+
+        //var answer = new ChatMessage
+        //{
+        //    Id = Guid.NewGuid(),
+        //    ThreadId = threadId,
+        //    UserId = userId,
+        //    Role = MessageRole.Assistant,
+        //    Content = textAnswer
+        //};
+
+        //history.AddAssistantMessage(textAnswer);
+
+        //var aiResp = new ChatAiServiceResponse
+        //{
+        //    RequestId = requestId,
+        //    ThreadId = threadId,
+        //    Status = ChatAnswerStatus.Ok,
+        //    Answer = answer,
+        //    UpdatedHistory = updatedHistory
+        //};
+
+        //ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiceRequest>(r =>
+        //                r.RequestId == expectedAiReq.RequestId &&
+        //                r.ThreadId == expectedAiReq.ThreadId &&
+        //                r.UserId == expectedAiReq.UserId &&
+        //                r.ChatType == expectedAiReq.ChatType/* &&*/
+        //                //r.History[0].Content == expectedAiReq.History[0].Content
+        //                //&&
+        //                //r.History[1].Content == expectedAiReq.History[1].Content
+        //                //&&
+        //                //r.History[2].Content == expectedAiReq.History[2].Content
+        //            ), It.IsAny<CancellationToken>()))
+        //  .ReturnsAsync(aiResp);
+
+        //var engineResponse = new EngineChatResponse
+        //{
+        //    RequestId = requestId,
+        //    AssistantMessage = textAnswer,
+        //    ChatName = chatName,
+        //    ThreadId = threadId,
+        //    Status = ChatAnswerStatus.Ok
+        //};
+        //var chatMetadata = new UserContextMetadata
+        //{
+        //    UserId = userId.ToString()
+        //};
+
+        //pub.Setup(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()))
+        //   .Returns(Task.CompletedTask);
+
+        //var msg = new Message
+        //{
+        //    ActionName = MessageAction.ProcessingChatMessage,
+        //    Payload = ToJsonElement(engineReq)
+        //};
+
+        //// Act
+        //await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
+
+        //// Assert
+        //accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
+        //ai.VerifyAll();
+        //accessorClient.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    //    //pub.Verify(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()), Times.Once);
+    //}
 
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsRetryable()
