@@ -17,6 +17,7 @@ export const useGetPeriodOverview = (
     queryKey: ["periodOverview", userId, startDate, endDate],
     queryFn: async () => {
       if (!userId) throw new Error("Missing userId");
+      if (!SUMMARY_URL) throw new Error("VITE_SUMMARY_MANAGER_URL environment variable is not defined");
 
       const queryParams = new URLSearchParams();
       if (startDate) queryParams.append("startDate", startDate);

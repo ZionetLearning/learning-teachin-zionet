@@ -1,7 +1,15 @@
 import { createUseStyles } from "react-jss";
 import { useThemeColors } from "@app-providers";
+import { alpha } from "@mui/material";
 
-export const useStyles = () => {
+export const STAT_COLORS = {
+  attempts: "#3b82f6",
+  words: "#10b981",
+  achievements: "#f59e0b",
+  practice: "#ef4444",
+};
+
+export const useStyles = (props: { iconColor?: string } = {}) => {
   const color = useThemeColors();
 
   return createUseStyles({
@@ -56,6 +64,8 @@ export const useStyles = () => {
       height: 34,
       borderRadius: 8,
       marginBottom: 6,
+      backgroundColor: ({ iconColor }: any) => iconColor ? alpha(iconColor, 0.2) : "transparent",
+      color: ({ iconColor }: any) => iconColor || "inherit",
       "& svg": {
         fontSize: 18,
       },
@@ -73,6 +83,6 @@ export const useStyles = () => {
       fontSize: 11,
       color: color.textMuted,
     },
-  })();
+  })(props);
 };
 

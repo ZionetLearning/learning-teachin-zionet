@@ -438,7 +438,8 @@
         "thisWeek": "This Week",
         "lastWeek": "Last Week",
         "thisMonth": "This Month",
-        "lastMonth": "Last Month"
+        "lastMonth": "Last Month",
+        "mainContentPlaceholder": "Additional content will appear here"
       },
       "tasks": {
         "title": "Tasks Management",

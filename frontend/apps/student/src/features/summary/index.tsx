@@ -9,7 +9,7 @@ import { useStyles } from "./style";
 const getStartOfWeek = (date: Date): Date => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const diff = d.getDate() - day;  
   return new Date(d.setDate(diff));
 };
 
@@ -64,7 +64,7 @@ export const SummaryDashboard = () => {
       <Box className={classes.mainContent}>
         {/* Main content will go here */}
         <Typography variant="h6" sx={{ color: "text.secondary" }}>
-          {t("pages.summary.mainContentPlaceholder", "Additional content will appear here")}
+          {t("pages.summary.mainContentPlaceholder")}
         </Typography>
       </Box>
     </Box>

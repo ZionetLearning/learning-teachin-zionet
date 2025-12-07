@@ -438,7 +438,8 @@
         "thisWeek": "השבוע",
         "lastWeek": "שבוע שעבר",
         "thisMonth": "החודש",
-        "lastMonth": "חודש שעבר"
+        "lastMonth": "חודש שעבר",
+        "mainContentPlaceholder": "תוכן נוסף יופיע כאן"
       },
       "tasks": {
         "title": "ניהול משימות",

@@ -163,6 +163,60 @@ export const PeriodSelector = ({
     return `${startDate.toLocaleDateString(undefined, options)} - ${endDate.toLocaleDateString(undefined, options)}`;
   };
 
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    date: Date | null,
+    weekIndex: number,
+    dayIndex: number
+  ) => {
+    if (!date) return;
+
+    const moveFocus = (wIdx: number, dIdx: number) => {
+      const el = document.getElementById(`day-${wIdx}-${dIdx}`);
+      if (el) {
+        el.focus();
+      }
+    };
+
+    switch (e.key) {
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (!isFutureDate(date)) {
+          handleDateClick(date);
+        }
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        if (dayIndex < 6) {
+          if (calendar[weekIndex][dayIndex + 1]) moveFocus(weekIndex, dayIndex + 1);
+        } else if (weekIndex < calendar.length - 1) {
+          if (calendar[weekIndex + 1][0]) moveFocus(weekIndex + 1, 0);
+        }
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        if (dayIndex > 0) {
+          if (calendar[weekIndex][dayIndex - 1]) moveFocus(weekIndex, dayIndex - 1);
+        } else if (weekIndex > 0) {
+          if (calendar[weekIndex - 1][6]) moveFocus(weekIndex - 1, 6);
+        }
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        if (weekIndex < calendar.length - 1) {
+          if (calendar[weekIndex + 1][dayIndex]) moveFocus(weekIndex + 1, dayIndex);
+        }
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        if (weekIndex > 0) {
+          if (calendar[weekIndex - 1][dayIndex]) moveFocus(weekIndex - 1, dayIndex);
+        }
+        break;
+    }
+  };
+
   return (
     <Box className={classes.card}>
       <Typography variant="body2" className={classes.dateRange}>
@@ -230,19 +284,24 @@ export const PeriodSelector = ({
             </IconButton>
           </Box>
 
-          <Box className={classes.calendar}>
-            <Box className={classes.weekDays}>
+          <Box className={classes.calendar} role="grid">
+            <Box className={classes.weekDays} role="row">
               {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                <Typography key={day} variant="caption" className={classes.weekDay}>
+                <Typography key={day} variant="caption" className={classes.weekDay} role="columnheader">
                   {day}
                 </Typography>
               ))}
             </Box>
             {calendar.map((week, weekIndex) => (
-              <Box key={weekIndex} className={classes.week}>
+              <Box key={weekIndex} className={classes.week} role="row">
                 {week.map((date, dayIndex) => (
                   <Box
                     key={dayIndex}
+                    id={`day-${weekIndex}-${dayIndex}`}
+                    role="gridcell"
+                    aria-label={date ? date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ""}
+                    tabIndex={date ? 0 : -1}
+                    onKeyDown={(e) => handleKeyDown(e, date, weekIndex, dayIndex)}
                     className={`${classes.day} ${
                       date && isDateInRange(date) ? classes.selectedDay : ""
                     } ${date && isToday(date) ? classes.today : ""} ${!date ? classes.emptyDay : ""} ${

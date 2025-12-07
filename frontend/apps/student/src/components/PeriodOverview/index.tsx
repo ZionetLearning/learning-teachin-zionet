@@ -7,7 +7,7 @@ import {
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import type { PeriodOverviewSummary } from "../../types/summary";
-import { useStyles } from "./style";
+import { useStyles, STAT_COLORS } from "./style";
 
 interface Props {
   summary?: PeriodOverviewSummary;
@@ -25,15 +25,12 @@ const StatCard = ({
   value: number | string;
   iconColor: string;
 }) => {
-  const classes = useStyles();
+  const classes = useStyles({ iconColor });
 
   return (
     <Card className={classes.statCard}>
       <CardContent className={classes.statCardContent}>
-        <Box 
-          className={classes.statIconContainer}
-          sx={{ backgroundColor: `${iconColor}20`, color: iconColor }}
-        >
+        <Box className={classes.statIconContainer}>
           {icon}
         </Box>
         <Box className={classes.statTextContainer}>
@@ -68,25 +65,25 @@ export const PeriodOverview = ({ summary, isLoading }: Props) => {
           icon={<Bolt />}
           label={t("pages.summary.totalAttempts")}
           value={getValue(summary?.totalAttempts)}
-          iconColor="#3b82f6"
+          iconColor={STAT_COLORS.attempts}
         />
         <StatCard
           icon={<Book />}
           label={t("pages.summary.wordsLearned")}
           value={getValue(summary?.wordsLearned)}
-          iconColor="#10b981"
+          iconColor={STAT_COLORS.words}
         />
         <StatCard
           icon={<EmojiEvents />}
           label={t("pages.summary.achievements")}
           value={getValue(summary?.achievementsUnlocked)}
-          iconColor="#f59e0b"
+          iconColor={STAT_COLORS.achievements}
         />
         <StatCard
           icon={<CalendarToday />}
           label={t("pages.summary.practiceDays")}
           value={getValue(summary?.practiceDays)}
-          iconColor="#ef4444"
+          iconColor={STAT_COLORS.practice}
         />
       </Box>
     </Box>
