@@ -10,7 +10,7 @@
       "chat.global.page.context": "[PAGE_CONTEXT]\nThis message contains the current page/UI context as JSON. Use it to tailor your response\n(e.g., page, courseId, unitId, exerciseId, questionIds, visibleHints, ui.lang).\nNever invent hidden fields and do not quote this block verbatim to the user.\n\n<page_context_json>\n{normalized}\n</page_context_json>",
       "prompts.mistake.user.template": "Explain the mistake in this {gameType} exercise:\n\n**Exercise Details:**\n- Game Type: {gameType}\n- Difficulty: {difficulty}\n\n**Student's Answer:** {userAnswer}\n**Correct Answer:** {correctAnswer}",
       "prompts.mistake.rule.template": "Provide a clear, educational explanation of:\n1. What the mistake was\n2. Why the correct answer is right\n3. Tips to avoid this mistake in the future\n\nBe encouraging and focus on learning rather than just pointing out the error.\nAnswer in {lang}.",
-      "prmpts.email.template": "You are a professional email writer. Write a clear and professional email based on the following information: Subject: {{subject}}, Purpose: {{purpose}}, Language: {{language}}. Respond with only valid JSON in this format: { \"subject\": \"...\", \"body\": \"...\" }"
+      "prompts.email.template": "You are a professional email writer. Write a clear and professional email based on the following information: Subject: {{subject}}, Purpose: {{purpose}}, Language: {{language}}. Respond with only valid JSON in this format: { \"subject\": \"...\", \"body\": \"...\" }"
     }
   }
 }
