@@ -5,7 +5,9 @@ import {
   useGameSubmission,
   useRetryAudio,
   useRetryNavigation,
+  useTrackAchievement,
 } from "@student/hooks";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import { compareTexts } from "../../utils";
 import { FeedbackDisplay } from "../FeedbackDisplay";
 import { AudioControls } from "../AudioControls";
@@ -43,6 +45,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
 
   const { submitAttempt } = useGameSubmission();
   const { navigateToMistakes } = useRetryNavigation();
+  const { track } = useTrackAchievement("PracticeMistakes");
   const { handlePlayAudio, handleReplayAudio, isPlaying, audioError } =
     useRetryAudio({
       sentence: correctSentence,
@@ -70,6 +73,10 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
 
       setFeedbackResult(updatedFeedback);
       setPhase("feedback");
+
+      if (res.status === "Success") {
+        track(ACHIEVEMENT_INCREMENT);
+      }
     } catch (error) {
       console.error("Failed to submit typing practice attempt:", error);
       setFeedbackResult(localFeedback);

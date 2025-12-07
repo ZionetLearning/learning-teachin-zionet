@@ -153,7 +153,8 @@ public static class GamesMapper
             Items = pagedResult.Items,
             Page = pagedResult.Page,
             PageSize = pagedResult.PageSize,
-            TotalCount = pagedResult.TotalCount
+            TotalCount = pagedResult.TotalCount,
+            HasNextPage = pagedResult.HasNextPage
         };
     }
 
