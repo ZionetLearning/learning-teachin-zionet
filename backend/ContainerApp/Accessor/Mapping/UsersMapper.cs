@@ -115,18 +115,6 @@ public static class UsersMapper
 
     #region UpdateUserLanguage Mappings
 
-    /// <summary>
-    /// Maps API UpdateUserLanguageRequest to DB UserLanguage
-    /// </summary>
-    public static UserLanguage ToDbModel(this UpdateUserLanguageRequest request)
-    {
-        return new UserLanguage
-        {
-            UserId = request.UserId,
-            Language = request.Language
-        };
-    }
-
     #endregion
 
     #region GetUserInterests Mappings
