@@ -48,6 +48,8 @@ public class WordCardService : IWordCardService
                 English = card.English,
                 IsLearned = card.IsLearned,
                 Explanation = card.Explanation,
+                CreatedAt = card.CreatedAt,
+                UpdatedAt = card.UpdatedAt
             }).ToList();
         }
         catch (Exception ex)
@@ -87,6 +89,8 @@ public class WordCardService : IWordCardService
                 English = newCard.English,
                 IsLearned = newCard.IsLearned,
                 Explanation = newCard.Explanation,
+                CreatedAt = newCard.CreatedAt,
+                UpdatedAt = newCard.UpdatedAt
             };
         }
         catch (Exception ex)
