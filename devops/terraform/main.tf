@@ -201,7 +201,7 @@ module "database" {
   existing_server_id  = null
   use_shared_postgres = false
 
-  depends_on = [azurerm_resource_group.main, module.network, module.network_db]
+  depends_on = [azurerm_resource_group.main, module.network]
 }
 
 # Create database on shared server for non-dev environments
