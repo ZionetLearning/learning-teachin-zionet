@@ -73,3 +73,4 @@ echo ""
 
 kubectl apply -f ./applications/applications-dev.yaml
 kubectl apply -f ./applications/applications-featest.yaml
+kubectl apply -f ./applications/applications-test.yaml
