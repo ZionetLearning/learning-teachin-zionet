@@ -2,3 +2,16 @@ server:
   extraArgs:
     - --basehref=/argocd
     - --rootpath=/argocd
+  config:
+    url: https://teachin.westeurope.cloudapp.azure.com/argocd
+    oidc.config: |
+      name: Logout
+      issuer: https://teachin.westeurope.cloudapp.azure.com/argocd
+  insecure: true
+
+configs:
+  params:
+    server.basehref: /argocd
+    server.rootpath: /argocd
+  cm:
+    url: https://teachin.westeurope.cloudapp.azure.com/argocd
