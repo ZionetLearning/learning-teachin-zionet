@@ -83,21 +83,6 @@ export const PeriodSelector = ({
       newMonth.setMonth(currentMonth.getMonth() + 1);
     }
     setCurrentMonth(newMonth);
-
-    // Update date range based on current view mode
-    if (viewMode === "week") {
-      const start = getStartOfWeek(newMonth, weekStartsOn);
-      const end = getEndOfWeek(newMonth);
-      if (!isSameDateRange(start, end)) {
-        onDateRangeChange(start, end);
-      }
-    } else {
-      const start = getStartOfMonth(newMonth);
-      const end = getEndOfMonth(newMonth);
-      if (!isSameDateRange(start, end)) {
-        onDateRangeChange(start, end);
-      }
-    }
   };
 
   const handleDateClick = (date: Date) => {
