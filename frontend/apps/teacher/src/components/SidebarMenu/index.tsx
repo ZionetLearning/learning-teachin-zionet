@@ -69,7 +69,7 @@ export const SidebarMenu = () => {
     {
       label: t("sidebar.emails"),
       icon: <EmailIcon />,
-      path: "/student-practice-history",
+      path: "/Emails",
       testId: "sidebar-student-practice-history",
     },
   ];
