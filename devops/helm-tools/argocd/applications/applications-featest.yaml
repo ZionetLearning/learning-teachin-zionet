@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: zionet-apps-prod
+  name: zionet-apps-featest
   namespace: argocd
   annotations:
     # Enable image updater for multiple images
