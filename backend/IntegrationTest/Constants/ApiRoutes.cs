@@ -51,7 +51,7 @@ public static class ApiRoutes
 
     // -------- Summaries --------
 
-    private const string BaseRoute = "/summaries-manager/summary";
+    private const string BaseRoute = "summaries-manager/summary";
 
     public static string GetPeriodOverview(Guid userId) => $"{BaseRoute}/{userId}/overview";
     public static string GetPeriodGamePractice(Guid userId) => $"{BaseRoute}/{userId}/game-practice";
