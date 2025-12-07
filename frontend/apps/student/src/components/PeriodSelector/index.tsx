@@ -13,14 +13,15 @@ interface Props {
   startDate: Date;
   endDate: Date;
   onDateRangeChange: (startDate: Date, endDate: Date) => void;
+  weekStartsOn?: 0 | 1; // 0 = Sunday, 1 = Monday
 }
 
 type ViewMode = "week" | "month";
 
-const getStartOfWeek = (date: Date): Date => {
+const getStartOfWeek = (date: Date, weekStartsOn: 0 | 1 = 0): Date => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day;
+  const diff = d.getDate() - day + (day < weekStartsOn ? -7 : 0) + weekStartsOn;
   return new Date(d.setDate(diff));
 };
 
@@ -43,22 +44,34 @@ export const PeriodSelector = ({
   startDate,
   endDate,
   onDateRangeChange,
+  weekStartsOn = 0,
 }: Props) => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
 
+  const isSameDateRange = (newStart: Date, newEnd: Date): boolean => {
+    return (
+      newStart.getTime() === startDate.getTime() &&
+      newEnd.getTime() === endDate.getTime()
+    );
+  };
+
   const handleModeChange = (mode: ViewMode) => {
     setViewMode(mode);
     if (mode === "week") {
-      const start = getStartOfWeek(startDate);
+      const start = getStartOfWeek(startDate, weekStartsOn);
       const end = getEndOfWeek(startDate);
-      onDateRangeChange(start, end);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
     } else {
       const start = getStartOfMonth(startDate);
       const end = getEndOfMonth(startDate);
-      onDateRangeChange(start, end);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
     }
   };
 
@@ -70,6 +83,21 @@ export const PeriodSelector = ({
       newMonth.setMonth(currentMonth.getMonth() + 1);
     }
     setCurrentMonth(newMonth);
+
+    // Update date range based on current view mode
+    if (viewMode === "week") {
+      const start = getStartOfWeek(newMonth, weekStartsOn);
+      const end = getEndOfWeek(newMonth);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
+    } else {
+      const start = getStartOfMonth(newMonth);
+      const end = getEndOfMonth(newMonth);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
+    }
   };
 
   const handleDateClick = (date: Date) => {
@@ -80,13 +108,17 @@ export const PeriodSelector = ({
     if (date > today) return;
     
     if (viewMode === "week") {
-      const start = getStartOfWeek(date);
+      const start = getStartOfWeek(date, weekStartsOn);
       const end = getEndOfWeek(date);
-      onDateRangeChange(start, end);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
     } else {
       const start = getStartOfMonth(date);
       const end = getEndOfMonth(date);
-      onDateRangeChange(start, end);
+      if (!isSameDateRange(start, end)) {
+        onDateRangeChange(start, end);
+      }
     }
   };
 
@@ -101,8 +133,11 @@ export const PeriodSelector = ({
     const weeks: (Date | null)[][] = [];
     let currentWeek: (Date | null)[] = [];
 
+    // Calculate offset based on week start day
+    const offset = (startDay - weekStartsOn + 7) % 7;
+
     // Fill starting empty days
-    for (let i = 0; i < startDay; i++) {
+    for (let i = 0; i < offset; i++) {
       currentWeek.push(null);
     }
 
@@ -124,7 +159,7 @@ export const PeriodSelector = ({
     }
 
     return weeks;
-  }, [currentMonth]);
+  }, [currentMonth, weekStartsOn]);
 
   const isDateInRange = (date: Date | null): boolean => {
     if (!date) return false;
@@ -133,9 +168,11 @@ export const PeriodSelector = ({
 
   const isFutureDate = (date: Date | null): boolean => {
     if (!date) return false;
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return date > today;
+    return normalizedDate > today;
   };
 
   const isToday = (date: Date | null): boolean => {
@@ -232,7 +269,7 @@ export const PeriodSelector = ({
             color={viewMode === "week" ? "primary" : "inherit"}
             onClick={() => handleModeChange("week")}
           >
-            {t("Week")}
+            {t("common.week")}
           </Button>
           <Button
             size="small"
@@ -241,7 +278,7 @@ export const PeriodSelector = ({
             color={viewMode === "month" ? "primary" : "inherit"}
             onClick={() => handleModeChange("month")}
           >
-            {t("Month")}
+            {t("common.month")}
           </Button>
           <Button
             size="small"
@@ -250,7 +287,7 @@ export const PeriodSelector = ({
             color="inherit"
             onClick={handleTodayClick}
           >
-            {t("Today")}
+            {t("common.today")}
           </Button>
         </Box>
 
@@ -286,11 +323,16 @@ export const PeriodSelector = ({
 
           <Box className={classes.calendar} role="grid">
             <Box className={classes.weekDays} role="row">
-              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                <Typography key={day} variant="caption" className={classes.weekDay} role="columnheader">
-                  {day}
-                </Typography>
-              ))}
+              {[0, 1, 2, 3, 4, 5, 6].map((weekday) => {
+                const dayOffset = (weekStartsOn + weekday) % 7;
+                const date = new Date(1970, 0, 4 + dayOffset); // 1970-01-04 is a Sunday
+                const localizedDay = date.toLocaleDateString(i18n.language, { weekday: "short" });
+                return (
+                  <Typography key={weekday} variant="caption" className={classes.weekDay} role="columnheader">
+                    {localizedDay}
+                  </Typography>
+                );
+              })}
             </Box>
             {calendar.map((week, weekIndex) => (
               <Box key={weekIndex} className={classes.week} role="row">
