@@ -1,5 +1,7 @@
 using Accessor.DB;
+using Accessor.Mapping;
 using Accessor.Models.Lessons;
+using Accessor.Models.Lessons.Requests;
 using Accessor.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +18,7 @@ public class LessonService : ILessonService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<LessonModel>> GetLessonsByTeacherAsync(Guid teacherId, CancellationToken ct)
+    public async Task<IReadOnlyList<Lesson>> GetLessonsByTeacherAsync(Guid teacherId, CancellationToken ct)
     {
         try
         {
@@ -32,20 +34,11 @@ public class LessonService : ILessonService
         }
     }
 
-    public async Task<LessonModel> CreateLessonAsync(CreateLessonRequest request, CancellationToken ct)
+    public async Task<Lesson> CreateLessonAsync(CreateLessonRequest request, CancellationToken ct)
     {
         try
         {
-            var lesson = new LessonModel
-            {
-                LessonId = Guid.NewGuid(),
-                Title = request.Title,
-                Description = request.Description,
-                ContentSectionsJson = request.ContentSectionsJson,
-                TeacherId = request.TeacherId,
-                CreatedAt = DateTime.UtcNow,
-                ModifiedAt = DateTime.UtcNow
-            };
+            var lesson = request.ToDbModel();
 
             _context.Lessons.Add(lesson);
             await _context.SaveChangesAsync(ct);
@@ -60,7 +53,7 @@ public class LessonService : ILessonService
         }
     }
 
-    public async Task<LessonModel> UpdateLessonAsync(Guid lessonId, UpdateLessonRequest request, CancellationToken ct)
+    public async Task<Lesson> UpdateLessonAsync(Guid lessonId, UpdateLessonRequest request, CancellationToken ct)
     {
         try
         {
@@ -73,10 +66,7 @@ public class LessonService : ILessonService
                 throw new InvalidOperationException($"Lesson {lessonId} not found");
             }
 
-            lesson.Title = request.Title;
-            lesson.Description = request.Description;
-            lesson.ContentSectionsJson = request.ContentSectionsJson;
-            lesson.ModifiedAt = DateTime.UtcNow;
+            lesson.UpdateFromRequest(request);
 
             await _context.SaveChangesAsync(ct);
 

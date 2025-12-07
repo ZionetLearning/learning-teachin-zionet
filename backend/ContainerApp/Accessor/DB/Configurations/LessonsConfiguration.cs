@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Accessor.Models.Lessons;
 using Accessor.Models.Users;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Accessor.DB.Configurations;
 
-public class LessonsConfiguration : IEntityTypeConfiguration<LessonModel>
+public class LessonsConfiguration : IEntityTypeConfiguration<Lesson>
 {
-    public void Configure(EntityTypeBuilder<LessonModel> builder)
+    public void Configure(EntityTypeBuilder<Lesson> builder)
     {
         builder.ToTable("lessons");
 
@@ -26,7 +26,7 @@ public class LessonsConfiguration : IEntityTypeConfiguration<LessonModel>
             .HasColumnName("description")
             .IsRequired();
 
-        builder.Property(l => l.ContentSectionsJson)
+        builder.Property(l => l.ContentSections)
             .HasColumnName("content_sections_json")
             .HasColumnType("jsonb")
             .IsRequired();
