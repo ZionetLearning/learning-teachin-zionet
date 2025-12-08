@@ -20,6 +20,7 @@ import SchoolIcon from "@mui/icons-material/School";
 import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import FlagIcon from "@mui/icons-material/Flag";
 import NoteAltIcon from "@mui/icons-material/NoteAlt";
+import SummarizeIcon from "@mui/icons-material/Summarize";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -66,6 +67,12 @@ export const SidebarMenu = () => {
       icon: <AccountCircleIcon />,
       path: "/profile",
       testId: "sidebar-profile",
+    },
+    {
+      label: t("sidebar.summary"),
+      icon: <SummarizeIcon />,
+      path: "/summary",
+      testId: "sidebar-summary",
     },
     {
       label: t("sidebar.classes"),
