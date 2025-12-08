@@ -246,7 +246,7 @@ jobs:
 
 
       - name: Add Langfuse
-        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
+        if: github.event.environment_name == 'dev' && github.event_name == 'workflow_dispatch'
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
