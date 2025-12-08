@@ -2,6 +2,12 @@
 # Common PowerShell functions analogous to common.sh
 
 function Get-RepoRoot {
+    # Prefer current directory if it looks like a specs root
+    $cwdSpecs = Join-Path (Get-Location) "specs"
+    if (Test-Path $cwdSpecs -PathType Container) {
+        return (Get-Location).Path
+    }
+
     try {
         $result = git rev-parse --show-toplevel 2>$null
         if ($LASTEXITCODE -eq 0) {
