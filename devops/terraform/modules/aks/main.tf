@@ -43,7 +43,11 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   private_cluster_enabled             = var.enable_private_cluster
   private_dns_zone_id                 = var.private_dns_zone_id
-  private_cluster_public_fqdn_enabled = false
+  private_cluster_public_fqdn_enabled = true // private_cluster_public_fqdn_enabled is an AKS
+  // setting that, when true, keeps a private cluster but also exposes a public API server FQDN.
+   //You still control reachability with api_server_authorized_ip_ranges;
+   // without opening those ranges, the public FQDN won’t be usable.
+   // When false (the default for private clusters), only the private endpoint/FQDN inside your VNet works. 
 
 }
 
