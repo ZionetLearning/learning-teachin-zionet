@@ -9,9 +9,13 @@ import { useTranslation } from "react-i18next";
 import type { PeriodOverviewSummary } from "../../types/summary";
 import { useStyles, STAT_COLORS } from "./style";
 
-interface Props {
-  summary?: PeriodOverviewSummary;
-  isLoading?: boolean;
+
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  iconColor: string;
 }
 
 const StatCard = ({
@@ -19,12 +23,7 @@ const StatCard = ({
   label,
   value,
   iconColor,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  iconColor: string;
-}) => {
+}: StatCardProps) => {
   const classes = useStyles({ iconColor });
 
   return (
@@ -45,8 +44,11 @@ const StatCard = ({
     </Card>
   );
 };
-
-export const PeriodOverview = ({ summary, isLoading }: Props) => {
+interface PeriodOverviewProps {
+  summary?: PeriodOverviewSummary;
+  isLoading?: boolean;
+}
+export const PeriodOverview = ({ summary, isLoading }: PeriodOverviewProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
 
