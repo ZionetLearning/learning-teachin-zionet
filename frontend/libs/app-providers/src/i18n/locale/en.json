@@ -442,7 +442,24 @@
         "lastWeek": "Last Week",
         "thisMonth": "This Month",
         "lastMonth": "Last Month",
-        "mainContentPlaceholder": "Additional content will appear here"
+        "mainContentPlaceholder": "Additional content will appear here",
+        "tabs": {
+          "games": "Games",
+          "achievements": "Achievements",
+          "wordCards": "Word Cards"
+        },
+        "achievementsSummary": {
+          "title": "Achievements Unlocked",
+          "count": "{{count}} achievements unlocked this period",
+          "count_plural": "{{count}} achievements unlocked this period",
+          "noAchievements": "No achievements unlocked in this period"
+        },
+        "games": {
+          "comingSoon": "Game practice summary coming soon"
+        },
+        "wordCards": {
+          "comingSoon": "Word cards summary coming soon"
+        }
       },
       "tasks": {
         "title": "Tasks Management",

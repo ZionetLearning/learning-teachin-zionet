@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@app-providers";
 import { useGetPeriodOverview } from "../../api";
 import { PeriodOverview, PeriodSelector } from "../../components";
+import { DetailedSummary } from "./components";
 import { useStyles } from "./style";
 
 const getStartOfWeek = (date: Date): Date => {
@@ -62,10 +63,11 @@ export const SummaryDashboard = () => {
       </Box>
 
       <Box className={classes.mainContent}>
-        {/* Main content will go here */}
-        <Typography variant="h6" sx={{ color: "text.secondary" }}>
-          {t("pages.summary.mainContentPlaceholder")}
-        </Typography>
+        <DetailedSummary
+          userId={user.userId}
+          startDate={startDate.toISOString()}
+          endDate={endDate.toISOString()}
+        />
       </Box>
     </Box>
   );

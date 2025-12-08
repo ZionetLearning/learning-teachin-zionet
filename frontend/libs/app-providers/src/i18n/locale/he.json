@@ -442,7 +442,24 @@
         "lastWeek": "שבוע שעבר",
         "thisMonth": "החודש",
         "lastMonth": "חודש שעבר",
-        "mainContentPlaceholder": "תוכן נוסף יופיע כאן"
+        "mainContentPlaceholder": "תוכן נוסף יופיע כאן",
+        "tabs": {
+          "games": "משחקים",
+          "achievements": "הישגים",
+          "wordCards": "כרטיסיות מילים"
+        },
+        "achievementsSummary": {
+          "title": "הישגים שנפתחו",
+          "count": "{{count}} הישגים נפתחו בתקופה זו",
+          "count_plural": "{{count}} הישגים נפתחו בתקופה זו",
+          "noAchievements": "לא נפתחו הישגים בתקופה זו"
+        },
+        "games": {
+          "comingSoon": "סיכום תרגול משחקים בקרוב"
+        },
+        "wordCards": {
+          "comingSoon": "סיכום כרטיסיות מילים בקרוב"
+        }
       },
       "tasks": {
         "title": "ניהול משימות",

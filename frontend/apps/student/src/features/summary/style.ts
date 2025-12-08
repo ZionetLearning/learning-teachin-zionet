@@ -33,10 +33,7 @@ export const useStyles = () => {
       background: color.paper,
       border: `1px solid ${color.divider}`,
       borderRadius: 12,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      textAlign: "center",
+      padding: "0 24px 24px 24px",
       boxSizing: "border-box",
     },
   })();
