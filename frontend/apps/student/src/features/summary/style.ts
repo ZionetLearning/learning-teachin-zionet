@@ -34,6 +34,10 @@ export const useStyles = () => {
       border: `1px solid ${color.divider}`,
       borderRadius: 12,
       padding: "0 24px 24px 24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
       boxSizing: "border-box",
     },
   })();
