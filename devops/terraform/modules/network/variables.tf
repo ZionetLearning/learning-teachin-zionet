@@ -28,11 +28,6 @@ variable "aks_subnet_prefix" {
   description = "CIDR for the AKS subnet (e.g., \"10.10.1.0/24\")"
 }
 
-variable "enable_db_vnet" {
-  type        = bool
-  default     = false
-  description = "Enable separate database VNet in different region (phase 2). Set true to create DB VNet with peering."
-}
 
 variable "db_vnet_name" {
   type        = string

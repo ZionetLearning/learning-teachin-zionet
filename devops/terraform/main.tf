@@ -1,6 +1,3 @@
-########################################
-# 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
-########################################
 resource "azurerm_resource_group" "main" {
   name     = "${var.environment_name}-${var.resource_group_name}"
   location = var.location
@@ -11,8 +8,9 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-#----- Network Module (Phase 1 + Phase 2) -----
-# Single module handles both AKS VNet and optional DB VNet with peering
+#########################################
+# Network Infrastructure
+#########################################
 module "network" {
   count = var.use_shared_aks ? 0 : 1
 
@@ -21,11 +19,12 @@ module "network" {
   location            = var.location
   vnet_name           = var.vnet_name
   address_space       = var.vnet_address_space
+
+  # AKS subnet
   aks_subnet_name     = var.aks_subnet_name
   aks_subnet_prefix   = var.aks_subnet_prefix
 
-  # Phase 2: Separate DB VNet
-  enable_db_vnet        = var.enable_db_vnet
+  # DB VNet + subnet
   db_vnet_name          = var.db_vnet_name
   db_vnet_location      = var.db_vnet_location
   db_vnet_address_space = var.db_vnet_address_space
@@ -40,6 +39,9 @@ module "network" {
   depends_on = [azurerm_resource_group.main]
 }
 
+########################################
+# 1. Azure infra: AKS (conditional), Service Bus, Postgres and SignalR, Redis
+########################################
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
@@ -57,7 +59,6 @@ module "aks" {
   prefix              = var.environment_name
   enable_spot_nodes   = var.environment_name != "prod" # Disable spot nodes for production
 
-  # Phase 1: Wire to private network
   aks_subnet_id          = module.network[0].aks_subnet_id
   enable_private_cluster = var.enable_private_cluster
   private_dns_zone_id    = var.private_dns_zone_id
