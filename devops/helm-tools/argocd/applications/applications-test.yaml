@@ -43,7 +43,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
-    targetRevision: HEAD
+    targetRevision: main
     path: devops/kubernetes/charts
     helm:
       valueFiles:
