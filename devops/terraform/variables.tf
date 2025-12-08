@@ -373,3 +373,16 @@ variable "db_vnet_address_space" {
   type        = list(string)
   default     = ["10.100.0.0/16"]
 }
+
+
+variable "enable_public_fqdn" {
+  description = "Expose AKS public API FQDN for GitHub-hosted runners"
+  type        = bool
+  default     = false
+}
+
+variable "api_server_authorized_ip_ranges" {
+  description = "CIDR list allowed to reach AKS API server (use 0.0.0.0/0 if you must open to all for GitHub runners)"
+  type        = list(string)
+  default     = []
+}

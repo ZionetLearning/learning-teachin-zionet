@@ -21,8 +21,8 @@ module "network" {
   address_space       = var.vnet_address_space
 
   # AKS subnet
-  aks_subnet_name     = var.aks_subnet_name
-  aks_subnet_prefix   = var.aks_subnet_prefix
+  aks_subnet_name   = var.aks_subnet_name
+  aks_subnet_prefix = var.aks_subnet_prefix
 
   # DB VNet + subnet
   db_vnet_name          = var.db_vnet_name
@@ -59,9 +59,11 @@ module "aks" {
   prefix              = var.environment_name
   enable_spot_nodes   = var.environment_name != "prod" # Disable spot nodes for production
 
-  aks_subnet_id          = module.network[0].aks_subnet_id
-  enable_private_cluster = var.enable_private_cluster
-  private_dns_zone_id    = var.private_dns_zone_id
+  aks_subnet_id                   = module.network[0].aks_subnet_id
+  enable_private_cluster          = var.enable_private_cluster
+  private_dns_zone_id             = var.private_dns_zone_id
+  enable_public_fqdn              = var.enable_public_fqdn
+  api_server_authorized_ip_ranges = var.api_server_authorized_ip_ranges
 
   depends_on = [module.network]
 }

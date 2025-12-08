@@ -86,3 +86,15 @@ variable "private_dns_zone_id" {
   description = "Private DNS Zone ID for the AKS API server (null = system-managed)"
   default     = null
 }
+
+variable "enable_public_fqdn" {
+  type        = bool
+  description = "Expose the AKS public API FQDN alongside the private endpoint"
+  default     = false
+}
+
+variable "api_server_authorized_ip_ranges" {
+  type        = list(string)
+  description = "CIDR list allowed to reach the AKS API server when public FQDN is enabled"
+  default     = []
+}

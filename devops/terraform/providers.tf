@@ -37,9 +37,13 @@ provider "azurerm" {
   # tenant_id       = var.tenant_id # removed because of githubactions
 }
 
+locals {
+  aks_api_host = var.enable_public_fqdn ? format("https://%s:443", data.azurerm_kubernetes_cluster.main.fqdn) : data.azurerm_kubernetes_cluster.main.kube_config[0].host
+}
+
 # Kubernetes provider configuration - moved from main.tf
 provider "kubernetes" {
-  host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+  host                   = local.aks_api_host
   client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
   client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
   cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
@@ -47,7 +51,7 @@ provider "kubernetes" {
 
 provider "helm" {
   kubernetes {
-    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+    host                   = local.aks_api_host
     client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
     client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
     cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
