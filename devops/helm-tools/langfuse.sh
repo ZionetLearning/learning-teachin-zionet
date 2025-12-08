@@ -42,7 +42,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.resources.requests.cpu="200m" \
   --set langfuse.resources.requests.memory="256Mi" \
   --set langfuse.resources.limits.cpu="500m" \
-  --set langfuse.resources.limits.memory="512Mi" \
+  --set langfuse.resources.limits.memory="1Gi" \
   --set langfuse.worker.replicas=1 \
   --set langfuse.worker.resources.requests.cpu="200m" \
   --set langfuse.worker.resources.requests.memory="256Mi" \
