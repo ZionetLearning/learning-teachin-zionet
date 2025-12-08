@@ -78,7 +78,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.resources.requests.cpu="200m" \
   --set clickhouse.resources.requests.memory="256Mi" \
   --set clickhouse.resources.limits.cpu="500m" \
-  --set clickhouse.resources.limits.memory="512Mi" \
+  --set clickhouse.resources.limits.memory="1Gi" \
   --set clickhouse.zookeeper.enabled=false \
   --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
   --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
