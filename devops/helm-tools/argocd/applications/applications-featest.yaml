@@ -44,7 +44,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
-    targetRevision: snir-avichai/1047/create-argocd
+    targetRevision: HEAD
     path: devops/kubernetes/charts
     helm:
       valueFiles:
