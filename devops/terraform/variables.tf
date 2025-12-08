@@ -324,11 +324,6 @@ variable "aks_subnet_prefix" {
   default     = "10.10.1.0/24"
 }
 
-variable "include_db_subnet" {
-  description = "Include delegated DB subnet in this VNet (phase 1). Set false for separate DB VNet (phase 2)."
-  type        = bool
-  default     = true
-}
 
 variable "db_subnet_name" {
   description = "Database subnet name"

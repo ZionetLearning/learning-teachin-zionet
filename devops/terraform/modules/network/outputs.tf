@@ -14,21 +14,16 @@ output "aks_subnet_id" {
 }
 
 output "db_vnet_id" {
-  value       = try(azurerm_virtual_network.database[0].id, null)
-  description = "ID of the database VNet (null if enable_db_vnet=false)"
+  value       = try(azurerm_virtual_network.database.id, null)
+  description = "ID of the database VNet"
 }
 
 output "db_vnet_name" {
-  value       = try(azurerm_virtual_network.database[0].name, null)
-  description = "Name of the database VNet (null if enable_db_vnet=false)"
+  value       = try(azurerm_virtual_network.database.name, null)
+  description = "Name of the database VNet"
 }
 
 output "db_subnet_id" {
-  value       = try(azurerm_subnet.database[0].id, null)
-  description = "ID of the database subnet (null if enable_db_vnet=false)"
-}
-
-output "aks_nsg_id" {
-  value       = azurerm_network_security_group.aks.id
-  description = "ID of the AKS network security group"
+  value       = try(azurerm_subnet.database.id, null)
+  description = "ID of the database subnet"
 }
