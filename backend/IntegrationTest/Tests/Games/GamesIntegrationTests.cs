@@ -76,10 +76,10 @@ public class GamesIntegrationTests(
         // Verify the structure of submitted history items
         foreach (var item in submittedAttempts)
         {
-   item.GameType.Should().Be(GameName.WordOrder.ToString());
-    item.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium);
+            item.GameType.Should().Be(GameName.WordOrder);
+            item.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium);
             item.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
-  item.CorrectAnswer.Should().NotBeEmpty();
+            item.CorrectAnswer.Should().NotBeEmpty();
             item.GivenAnswer.Should().NotBeEmpty();
         }
     }
@@ -107,11 +107,11 @@ await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
         result.Items.Should().HaveCount(1); // One group: wordOrderGame + easy 
  
         var summary = result.Items.First();
-        summary.GameType.Should().Be(GameName.WordOrder.ToString());
+        summary.GameType.Should().Be(GameName.WordOrder);
         summary.Difficulty.Should().Be(Difficulty.Easy);
         summary.AttemptsCount.Should().Be(3); // 2 successes + 1 failure
         summary.TotalSuccesses.Should().Be(2);
-   summary.TotalFailures.Should().Be(1);
+        summary.TotalFailures.Should().Be(1);
     }
 
     [Fact(DisplayName = "GET /games-manager/history/{id} - Teacher can access their student's history")]
@@ -140,7 +140,7 @@ await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
         submittedAttempts.Should().HaveCount(1);
         
         var historyItem = submittedAttempts.First();
-historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
+        historyItem.GameType.Should().Be(GameName.WordOrder);
         historyItem.Difficulty.Should().Be(Difficulty.Easy);
         historyItem.Status.Should().Be(AttemptStatus.Success);
     }
@@ -276,7 +276,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         // If there are pending attempts, verify their structure
         foreach (var pendingAttempt in pendingAttempts)
         {
-            pendingAttempt.GameType.Should().Be(GameName.WordOrder.ToString());
+            pendingAttempt.GameType.Should().Be(GameName.WordOrder);
             pendingAttempt.Status.Should().Be(AttemptStatus.Pending);
             pendingAttempt.CorrectAnswer.Should().NotBeEmpty();
             // Pending attempts should not have a given answer yet

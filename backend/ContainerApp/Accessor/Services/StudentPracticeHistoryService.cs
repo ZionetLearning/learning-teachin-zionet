@@ -33,16 +33,28 @@ public class StudentPracticeHistoryService : IStudentPracticeHistoryService
 
             var nameMap = await _userService.GetUserFullNamesAsync(studentIds, ct);
 
-            foreach (var item in result.Items)
+            // Create new items with student names populated (records are immutable)
+            var enrichedItems = result.Items.Select(item =>
             {
                 if (nameMap.TryGetValue(item.StudentId, out var userName))
                 {
-                    item.StudentFirstName = userName.FirstName;
-                    item.StudentLastName = userName.LastName;
+                    return item with
+                    {
+                        StudentFirstName = userName.FirstName,
+                        StudentLastName = userName.LastName
+                    };
                 }
-            }
 
-            return result;
+                return item;
+            }).ToList();
+
+            return new PagedResult<SummaryHistoryWithStudentDto>
+            {
+                Items = enrichedItems,
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
         }
         catch (Exception ex)
         {

@@ -1,13 +1,11 @@
-using Manager.Models.Games;
-using Manager.Models.UserGameConfiguration;
+using Accessor.Models.GameConfiguration;
 
-namespace Manager.Services.Clients.Accessor.Models.Games;
+namespace Accessor.Models.Games.Responses;
 
 /// <summary>
-/// Response model received from Accessor service after submitting a game attempt
-/// Matches Accessor's SubmitAttemptResponse exactly
+/// Response model for submitting a game attempt
 /// </summary>
-public sealed record SubmitAttemptAccessorResponse
+public sealed record SubmitAttemptResponse
 {
     public required Guid AttemptId { get; init; }
     public required Guid ExerciseId { get; init; }
@@ -19,3 +17,4 @@ public sealed record SubmitAttemptAccessorResponse
     public required int AttemptNumber { get; init; }
     public required decimal Accuracy { get; init; }
 }
+
