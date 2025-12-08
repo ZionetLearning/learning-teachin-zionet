@@ -34,7 +34,7 @@ public class AccessorDbContext : DbContext
     public DbSet<AchievementModel> Achievements { get; set; } = default!;
     public DbSet<UserAchievementModel> UserAchievements { get; set; } = default!;
     public DbSet<UserProgressModel> UserProgress { get; set; } = default!;
-    public DbSet<LessonModel> Lessons { get; set; } = default!;
+    public DbSet<Lesson> Lessons { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

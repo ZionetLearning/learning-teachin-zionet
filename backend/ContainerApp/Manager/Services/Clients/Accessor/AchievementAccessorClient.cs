@@ -46,7 +46,7 @@ public class AchievementAccessorClient(
         }
     }
 
-    public async Task<IReadOnlyDictionary<Guid, DateTime>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
+    public async Task<IReadOnlyList<GetUserUnlockedAchievementAccessorResponse>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         try
         {
@@ -64,15 +64,14 @@ public class AchievementAccessorClient(
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
 
-            var unlockedAchievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
+            var unlockedAchievements = await _daprClient.InvokeMethodAsync<List<GetUserUnlockedAchievementAccessorResponse>>(
                 HttpMethod.Get, AppIds.Accessor, $"achievements-accessor/user/{userId}/unlocked{queryString}", ct);
 
             _logger.LogInformation(
                 "Retrieved {Count} unlocked achievements for user {UserId}. FromDate={FromDate}, ToDate={ToDate}",
                 unlockedAchievements?.Count ?? 0, userId, fromDate, toDate);
 
-            return unlockedAchievements?.ToDictionary(a => a.AchievementId, a => a.CreatedAt)
-                ?? new Dictionary<Guid, DateTime>();
+            return unlockedAchievements ?? [];
         }
         catch (Exception ex)
         {
