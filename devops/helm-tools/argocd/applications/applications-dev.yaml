@@ -23,6 +23,11 @@ metadata:
     argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
     argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
     
+    # Allow tags - only tags matching the environment
+    argocd-image-updater.argoproj.io/manager.allow-tags: "dev"
+    argocd-image-updater.argoproj.io/accessor.allow-tags: "dev"
+    argocd-image-updater.argoproj.io/engine.allow-tags: "dev"
+
     # Write back method - use 'argocd' for parameter override or 'git' to commit changes
     argocd-image-updater.argoproj.io/write-back-method: argocd
     
@@ -55,6 +60,8 @@ spec:
       - name: dapr.stateStore.redis.redisDB
         value: "0"
       - name: keda.enabled
+        value: "true"
+      - name: langfuse.enabled
         value: "true"
   destination:
     server: 'https://kubernetes.default.svc'

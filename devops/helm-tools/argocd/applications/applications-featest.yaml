@@ -23,6 +23,11 @@ metadata:
     argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
     argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
     
+    # Allow tags - only tags matching the environment
+    argocd-image-updater.argoproj.io/manager.allow-tags: "featest"
+    argocd-image-updater.argoproj.io/accessor.allow-tags: "featest"
+    argocd-image-updater.argoproj.io/engine.allow-tags: "featest"
+
     # Write back method - use 'argocd' for parameter override or 'git' to commit changes
     argocd-image-updater.argoproj.io/write-back-method: argocd
     
@@ -39,7 +44,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
-    targetRevision: HEAD
+    targetRevision: snir-avichai/1047/create-arocd
     path: devops/kubernetes/charts
     helm:
       valueFiles:
@@ -58,6 +63,8 @@ spec:
         value: "3"
       - name: keda.enabled
         value: "true"
+      - name: langfuse.enabled
+        value: "false"
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: featest
