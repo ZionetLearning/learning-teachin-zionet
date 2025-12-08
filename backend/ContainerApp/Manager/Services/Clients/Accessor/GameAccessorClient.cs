@@ -136,8 +136,8 @@ public class GameAccessorClient : IGameAccessorClient
 
             return new GetHistoryAccessorResponse
             {
-                Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                Summary = summary ? new PagedResponseResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResponseResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
             };
         }
         catch (Exception ex)
