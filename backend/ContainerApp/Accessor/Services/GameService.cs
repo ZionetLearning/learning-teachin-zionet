@@ -68,7 +68,7 @@ public class GameService : IGameService
             GameType = original.GameType,
             Difficulty = original.Difficulty,
             CorrectAnswer = original.CorrectAnswer,
-            GivenAnswer = request.GivenAnswer.ToList(),
+            GivenAnswer = request.GivenAnswer,
             Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
             AttemptNumber = nextNumber,
             Accuracy = accuracy,
