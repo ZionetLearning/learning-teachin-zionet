@@ -31,7 +31,7 @@ vnet_address_space     = ["10.20.0.0/16"]
 aks_subnet_name        = "aks-subnet-prod"
 aks_subnet_prefix      = "10.20.1.0/24"
 db_subnet_name         = "db-subnet-prod"
-db_subnet_prefix       = "10.20.2.0/24"
+db_subnet_prefix       = "10.110.1.0/24"
 enable_private_cluster = false
 private_dns_zone_id   = null  # Use system-managed Private DNS Zone
 enable_public_fqdn     = false
@@ -42,4 +42,5 @@ enable_db_vnet         = false  # Set true to enable separate DB VNet
 db_vnet_name           = "teachin-db-vnet-prod"
 db_vnet_location       = "Israel Central"
 db_vnet_address_space  = ["10.110.0.0/16"]
-# db_subnet_name and db_subnet_prefix reused from phase 1 config above
+# Database subnet MUST be within db_vnet_address_space (10.110.0.0/16)
+# Note: db_subnet_prefix should be different - it's within the DB VNet, not AKS VNet
