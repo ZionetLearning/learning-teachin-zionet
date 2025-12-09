@@ -561,6 +561,50 @@ namespace Accessor.DB.Migrations
                     b.ToTable("GameAttempts", (string)null);
                 });
 
+            modelBuilder.Entity("Accessor.Models.Lessons.LessonModel", b =>
+                {
+                    b.Property<Guid>("LessonId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<string>("ContentSectionsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("content_sections_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("teacher_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("title");
+
+                    b.HasKey("LessonId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("lessons", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.Meetings.MeetingModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -902,6 +946,16 @@ namespace Accessor.DB.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Accessor.Models.Lessons.LessonModel", b =>
+                {
+                    b.HasOne("Accessor.Models.Users.UserModel", null)
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_lessons_users_teacher_id");
                 });
 
             modelBuilder.Entity("Accessor.Models.Classes.Class", b =>

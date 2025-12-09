@@ -4,7 +4,10 @@
       "loading": "Loading…",
       "error": "Error",
       "tryAgain": "Please try again.",
-      "updating": "Updating…"
+      "updating": "Updating…",
+      "week": "Week",
+      "month": "Month",
+      "today": "Today"
     },
     "pages": {
       "auth": {
@@ -426,6 +429,21 @@
           "deleteFailed": "Failed to delete avatar. Please try again."
         }
       },
+      "summary": {
+        "title": "Student Summaries",
+        "subTitle": "Track progress and achievements over time",
+        "periodOverview": "Period Overview",
+        "selectPeriod": "Select Period",
+        "totalAttempts": "Total Attempts",
+        "wordsLearned": "Words Learned",
+        "achievements": "Achievements",
+        "practiceDays": "Practice Days",
+        "thisWeek": "This Week",
+        "lastWeek": "Last Week",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "mainContentPlaceholder": "Additional content will appear here"
+      },
       "tasks": {
         "title": "Tasks Management",
         "tasks": "Tasks",
@@ -706,6 +724,7 @@
       "users": "Users",
       "tasks": "Tasks",
       "profile": "Profile",
+      "summary": "Summary",
       "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History",
       "wordCards": "Word Cards",
