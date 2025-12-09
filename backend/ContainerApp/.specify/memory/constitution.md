@@ -1,14 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles: N/A
-- Added sections: Principle VI (Database Schema Management with EF Core Migrations)
+- Added sections: Updated "Architecture & Boundaries" with multi-service roles and call rules
 - Removed sections: N/A
 - Templates updated:
-	- ✅ .specify/templates/plan-template.md (Constitution Check should verify migration requirement)
-	- ✅ .specify/templates/spec-template.md (no change needed, aligned)
-	- ✅ .specify/templates/tasks-template.md (should include migration tasks for DB changes)
-- Follow-up TODOs: None
+	- ✅ .specify/templates/plan-template.md (Constitution Check already aligns with service roles and communication rules)
+	- ✅ .specify/templates/spec-template.md (no change needed, remains aligned)
+	- ✅ .specify/templates/tasks-template.md (no change needed, foundational tasks still valid)
+- Follow-up TODOs:
+	- TODO(RATIFICATION_DATE): initial ratification date to be defined
 -->
 
 # TeachIn Backend Constitution
@@ -74,23 +75,40 @@ non-production environment before merge.
 
 ## Architecture & Boundaries
 
-The backend MUST remain a .NET 9, Dapr-based, three-service system for
-the learning platform, serving Students, Teachers, and Admins
-with clearly scoped access.
+The backend MUST remain a .NET 9, Dapr-based system organized around
+three service roles (Manager, Engine, Accessor) for the learning
+platform, serving Students, Teachers, and Admins with clearly scoped
+access. There MAY be multiple services in each role (e.g., several
+Managers, Engines, or Accessors), but all MUST follow the same
+boundaries and communication rules.
 
-- Manager is the only entrypoint for frontend clients and SignalR
-	connections; it owns authentication, authorization, and role-based
-	access enforcement. and main logic point.
-- Engine handles compute-heavy and AI-related processing and MUST NOT
-	access the database directly.
-- Accessor owns all data access (PostgreSQL via EF Core) and external
-	systems (e.g., email) and MUST expose operations only via its public
-	contracts.
-- New capabilities MUST first ask: "Which service owns this concern?"
-	and place code accordingly.
+- Manager services are the only entrypoints for frontend clients and
+	SignalR connections; they own authentication, authorization, role-based
+	access enforcement, and orchestration of cross-service flows.
+- Engine services handle compute-heavy and AI-related processing and
+	MUST NOT access the database directly except via Accessor services.
+- Accessor services own all data access (PostgreSQL via EF Core) and
+	external systems (e.g., email) and MUST expose operations only via
+	their public contracts.
+- New capabilities MUST first ask: "Which service role owns this
+	concern?" and place code accordingly.
 
-Any proposal to introduce a new service or bypass these boundaries MUST
-include a written rationale and an explicit governance-approved architecture update.
+Service-to-service call rules:
+
+- Accessor → Accessor: NOT allowed. Accessors MUST NOT depend on or
+	invoke other Accessors directly.
+- Engine → Manager/Engine: NOT allowed. Engines MUST NOT call Manager
+	or other Engine services.
+- Engine → Accessor: Allowed only when truly necessary (e.g., long-
+	running or AI workflows that need data access). Prefer Manager-
+	orchestrated flows when feasible.
+- Manager → Manager/Engine/Accessor: Allowed. Managers orchestrate
+	flows and MAY call other Managers, Engines, and Accessors using
+	approved communication mechanisms (Dapr, queues).
+
+Any proposal to introduce a new service type or bypass these
+boundaries MUST include a written rationale and an explicit governance-
+approved architecture update.
 
 ## Workflow & Quality
 Code reviews MUST verify:
@@ -126,5 +144,4 @@ responsible for enforcing it.
 - Compliance: SpecKit commands and review checklists MUST treat the
 	"Constitution Check" as a blocking gate for new features. Violations
 	MUST be explicitly documented and justified, not silently ignored.
-**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE): initial ratification date to be defined | **Last Amended**: 2025-12-09
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): initial ratification date to be defined | **Last Amended**: 2025-12-08
+**Version**: 1.2.0 | **Ratified**: initial ratification date to be defined | **Last Amended**: 2025-12-09
