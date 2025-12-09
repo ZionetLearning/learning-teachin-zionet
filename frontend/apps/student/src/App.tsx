@@ -27,6 +27,7 @@ import {
   WordCardsPage,
   WordCardsChallengePage,
   ClassesPage,
+  SummaryPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -83,6 +84,7 @@ function App() {
             element={<WordCardsChallengePage />}
           />
           <Route path="/classes" element={<ClassesPage />} />
+          <Route path="/summary" element={<SummaryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

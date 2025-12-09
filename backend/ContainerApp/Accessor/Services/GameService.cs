@@ -2,8 +2,8 @@ using Accessor.DB;
 using Accessor.Helpers;
 using Accessor.Models.GameConfiguration;
 using Accessor.Models.Games;
+using Accessor.Models.Games.Requests;
 using Accessor.Services.Interfaces;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
@@ -12,16 +12,14 @@ public class GameService : IGameService
 {
     private readonly AccessorDbContext _db;
     private readonly ILogger<GameService> _logger;
-    private readonly IMapper _mapper;
 
-    public GameService(AccessorDbContext db, ILogger<GameService> logger, IMapper mapper)
+    public GameService(AccessorDbContext db, ILogger<GameService> logger)
     {
         _db = db;
         _logger = logger;
-        _mapper = mapper;
     }
 
-    public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
+    public async Task<GameAttempt> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
     {
         if (request.StudentId == Guid.Empty)
         {
@@ -92,10 +90,10 @@ public class GameService : IGameService
         _logger.LogInformation("New attempt saved. AttemptId={NewId}, ExerciseId={ExerciseId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
             newAttempt.AttemptId, original.ExerciseId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
 
-        return _mapper.Map<SubmitAttemptResult>(newAttempt);
+        return newAttempt;
     }
 
-    public async Task<GameHistoryResponse> GetHistoryAsync(
+    public async Task<GameHistoryDto> GetHistoryAsync(
     Guid studentId, bool summary, int page, int pageSize, bool getPending, DateTimeOffset? fromDate, DateTimeOffset? toDate, CancellationToken ct)
     {
         try
@@ -165,7 +163,7 @@ public class GameService : IGameService
                     "Summary history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
                     studentId, items.Count, total, getPending);
 
-                return new GameHistoryResponse
+                return new GameHistoryDto
                 {
                     Summary = new PagedResult<SummaryHistoryDto>
                     {
@@ -206,7 +204,7 @@ public class GameService : IGameService
                     "Full history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
                     studentId, items.Count, total, getPending);
 
-                return new GameHistoryResponse
+                return new GameHistoryDto
                 {
                     Detailed = new PagedResult<AttemptHistoryDto>
                     {
@@ -225,7 +223,7 @@ public class GameService : IGameService
                 studentId, summary, getPending);
 
             return summary
-                ? new GameHistoryResponse
+                ? new GameHistoryDto
                 {
                     Summary = new PagedResult<SummaryHistoryDto>
                     {
@@ -235,7 +233,7 @@ public class GameService : IGameService
                         TotalCount = 0
                     }
                 }
-                : new GameHistoryResponse
+                : new GameHistoryDto
                 {
                     Detailed = new PagedResult<AttemptHistoryDto>
                     {
@@ -319,12 +317,24 @@ public class GameService : IGameService
 
             _logger.LogInformation("Mistakes retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}", studentId, items.Count, total);
 
-            return new PagedResult<MistakeDto> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+            return new PagedResult<MistakeDto>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = total
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while fetching mistakes. StudentId={StudentId}", studentId);
-            return new PagedResult<MistakeDto> { Items = Array.Empty<MistakeDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            return new PagedResult<MistakeDto>
+            {
+                Items = Array.Empty<MistakeDto>(),
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = 0
+            };
         }
     }
 
@@ -373,7 +383,13 @@ public class GameService : IGameService
 
             _logger.LogInformation("All histories retrieved. Records={Count}, TotalCount={Total}", items.Count, total);
 
-            return new PagedResult<SummaryHistoryWithStudentDto> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+            return new PagedResult<SummaryHistoryWithStudentDto>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = total
+            };
         }
         catch (Exception ex)
         {
@@ -422,13 +438,13 @@ public class GameService : IGameService
         }
     }
 
-    public async Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<List<GeneratedSentenceResultDto>> SaveGeneratedSentencesAsync(SaveGeneratedSentencesRequest request, CancellationToken ct)
     {
         try
         {
-            var resultList = new List<AttemptedSentenceResult>();
+            var resultList = new List<GeneratedSentenceResultDto>();
 
-            foreach (var sentence in dto.Sentences)
+            foreach (var sentence in request.Sentences)
             {
                 var exerciseId = Guid.NewGuid();
 
@@ -436,10 +452,10 @@ public class GameService : IGameService
                 {
                     AttemptId = exerciseId,
                     ExerciseId = exerciseId,
-                    StudentId = dto.StudentId,
-                    GameType = dto.GameType,
-                    Difficulty = dto.Difficulty,
-                    CorrectAnswer = sentence.CorrectAnswer,
+                    StudentId = request.StudentId,
+                    GameType = request.GameType,
+                    Difficulty = request.Difficulty,
+                    CorrectAnswer = sentence.CorrectAnswer.ToList(),
                     GivenAnswer = new(),
                     Status = AttemptStatus.Pending,
                     AttemptNumber = 0,
@@ -449,12 +465,12 @@ public class GameService : IGameService
 
                 _db.GameAttempts.Add(attempt);
 
-                resultList.Add(new AttemptedSentenceResult
+                resultList.Add(new GeneratedSentenceResultDto
                 {
                     ExerciseId = exerciseId,
                     Text = sentence.Text,
-                    Words = sentence.CorrectAnswer,
-                    Difficulty = dto.Difficulty.ToString().ToLowerInvariant(),
+                    Words = sentence.CorrectAnswer.ToList(),
+                    Difficulty = request.Difficulty.ToString().ToLowerInvariant(),
                     Nikud = sentence.Nikud
                 });
             }
@@ -465,12 +481,12 @@ public class GameService : IGameService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("SaveGeneratedSentencesAsync was canceled. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            _logger.LogWarning("SaveGeneratedSentencesAsync was canceled. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while saving generated sentences. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            _logger.LogError(ex, "Error while saving generated sentences. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
             throw;
         }
     }
