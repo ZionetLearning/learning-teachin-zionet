@@ -178,6 +178,24 @@ jobs:
           fi
 
 
+      - name: Terraform Apply - AKS Module First
+        if: env.plan_only != 'true'
+        env:
+          TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
+          TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
+          TF_VAR_brevo_address: ${{ secrets.BREVO_ADDRESS }}
+          TF_VAR_brevo_host: ${{ secrets.BREVO_HOST }}
+          TF_VAR_brevo_port: ${{ secrets.BREVO_PORT }}
+          TF_VAR_brevo_username: ${{ secrets.BREVO_USERNAME }}
+          TF_VAR_brevo_password: ${{ secrets.BREVO_PASSWORD }}
+
+        run: |
+          echo "🔧 Applying AKS module first to switch from private to public cluster..."
+          terraform apply -target="module.aks" -target="module.network" -refresh=false -auto-approve -var-file=${{ env.TFVARS_FILE }}
+          echo "⏳ Waiting 30 seconds for AKS cluster to be ready..."
+          sleep 30
+        working-directory: ${{ env.TF_DIR }}
+
       - name: Terraform Plan
         env:
           TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
@@ -203,7 +221,7 @@ jobs:
           TF_VAR_brevo_password: ${{ secrets.BREVO_PASSWORD }}
 
         run: |
-          echo "Applying Terraform changes..."
+          echo "Applying remaining Terraform changes..."
           terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
