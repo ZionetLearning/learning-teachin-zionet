@@ -139,7 +139,13 @@ $currentDir = (Get-Location).Path
 $currentDirSpecify = Join-Path $currentDir ".specify"
 if (Test-Path $currentDirSpecify -PathType Container) {
     $repoRoot = $currentDir
-    $hasGit = Test-Path (Join-Path $currentDir ".git")
+    # Check if we're inside a git repository (not just if .git is in current folder)
+    try {
+        git rev-parse --is-inside-work-tree 2>$null | Out-Null
+        $hasGit = ($LASTEXITCODE -eq 0)
+    } catch {
+        $hasGit = $false
+    }
 } else {
     # Fall back to git root if available
     try {
