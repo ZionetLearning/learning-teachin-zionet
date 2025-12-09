@@ -134,20 +134,36 @@ if (-not $fallbackRoot) {
     Write-Error "Error: Could not determine repository root. Please run this script from within the repository."
     exit 1
 }
-
-try {
-    $repoRoot = git rev-parse --show-toplevel 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        $hasGit = $true
-    } else {
-        throw "Git not available"
+# Prefer current directory if it has .specify folder
+$currentDir = (Get-Location).Path
+$currentDirSpecify = Join-Path $currentDir ".specify"
+if (Test-Path $currentDirSpecify -PathType Container) {
+    $repoRoot = $currentDir
+    # Check if we're inside a git repository (not just if .git is in current folder)
+    try {
+        git rev-parse --is-inside-work-tree 2>$null | Out-Null
+        $hasGit = ($LASTEXITCODE -eq 0)
+    } catch {
+        $hasGit = $false
     }
-} catch {
-    $repoRoot = $fallbackRoot
-    $hasGit = $false
+} else {
+    # Fall back to git root if available
+    try {
+        $gitRoot = git rev-parse --show-toplevel 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $repoRoot = $gitRoot
+            $hasGit = $true
+        } else {
+            throw "Git not available"
+        }
+    } catch {
+        $repoRoot = $fallbackRoot
+        $hasGit = $false
+    }
 }
 
-Set-Location $repoRoot
+# Don't change directory - stay in current location
+# Set-Location $repoRoot  # <-- REMOVE THIS LINE
 
 $specsDir = Join-Path $repoRoot 'specs'
 New-Item -ItemType Directory -Path $specsDir -Force | Out-Null

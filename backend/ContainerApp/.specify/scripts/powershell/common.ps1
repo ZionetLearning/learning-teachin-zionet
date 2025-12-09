@@ -3,7 +3,7 @@
 
 function Get-RepoRoot {
     # Prefer current directory if it looks like a specs root
-    $cwdSpecs = Join-Path (Get-Location) "specs"
+    $cwdSpecs = Join-Path (Get-Location) ".specify"
     if (Test-Path $cwdSpecs -PathType Container) {
         return (Get-Location).Path
     }
