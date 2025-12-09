@@ -40,7 +40,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.nextauth.secret.secretKeyRef.key="NEXTAUTH_SECRET" \
   --set langfuse.resources.requests.cpu="200m" \
-  --set langfuse.resources.requests.memory="256Mi" \
+  --set langfuse.resources.requests.memory="512Mi" \
   --set langfuse.resources.limits.cpu="500m" \
   --set langfuse.resources.limits.memory="1Gi" \
   --set langfuse.worker.replicas=1 \
@@ -75,9 +75,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.auth.existingSecretKey="CLICKHOUSE_PASSWORD" \
   --set clickhouse.resourcesPreset="nano" \
   --set clickhouse.replicaCount=1 \
-  --set clickhouse.resources.requests.cpu="200m" \
-  --set clickhouse.resources.requests.memory="256Mi" \
-  --set clickhouse.resources.limits.cpu="500m" \
+  --set clickhouse.resources.requests.cpu="500m" \
+  --set clickhouse.resources.requests.memory="800Mi" \
+  --set clickhouse.resources.limits.cpu="700m" \
   --set clickhouse.resources.limits.memory="1Gi" \
   --set clickhouse.zookeeper.enabled=false \
   --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
