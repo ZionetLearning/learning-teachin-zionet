@@ -177,22 +177,6 @@ jobs:
             echo "✅ Using existing tfvars file: ${{ env.TFVARS_FILE }}"
           fi
 
-      # TEMPORARY: Apply AKS module first to enable public FQDN - REMOVE AFTER FIRST SUCCESSFUL RUN
-      - name: Terraform Apply - AKS Only (Fix Private Cluster Connectivity)
-        if: env.plan_only != 'true'
-        env:
-          TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
-          TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
-          TF_VAR_brevo_address: ${{ secrets.BREVO_ADDRESS }}
-          TF_VAR_brevo_host: ${{ secrets.BREVO_HOST }}
-          TF_VAR_brevo_port: ${{ secrets.BREVO_PORT }}
-          TF_VAR_brevo_username: ${{ secrets.BREVO_USERNAME }}
-          TF_VAR_brevo_password: ${{ secrets.BREVO_PASSWORD }}
-        run: |
-          echo "🔧 TEMPORARY: Applying AKS module first to enable public FQDN..."
-          echo "This fixes the private cluster DNS resolution issue"
-          terraform apply -target="module.aks" -refresh=false -auto-approve -var-file=${{ env.TFVARS_FILE }}
-        working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Plan
         env:
