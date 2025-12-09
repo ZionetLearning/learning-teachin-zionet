@@ -1,7 +1,7 @@
 using Accessor.DB;
 using Accessor.Models.Games;
+using Accessor.Models.Games.Requests;
 using Accessor.Services;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -9,13 +9,10 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Accessor.Models.GameConfiguration;
 
-
 namespace AccessorUnitTests.Services;
 
 public class GameServiceTests
 {
-    //private const string WordOrderGame = GameName.WordOrder;
-
     private static AccessorDbContext NewDb(string name)
     {
         var options = new DbContextOptionsBuilder<AccessorDbContext>()
@@ -30,24 +27,7 @@ public class GameServiceTests
     private static GameService NewGameService(AccessorDbContext db)
     {
         var logger = Mock.Of<ILogger<GameService>>();
-        var mockMapper = new Mock<IMapper>();
-
-        mockMapper
-            .Setup(m => m.Map<SubmitAttemptResult>(It.IsAny<GameAttempt>()))
-            .Returns((GameAttempt src) => new SubmitAttemptResult
-            {
-                StudentId = src.StudentId,
-                ExerciseId = src.ExerciseId,
-                AttemptId = src.AttemptId,
-                GameType = src.GameType,
-                Difficulty = src.Difficulty,
-                Status = src.Status,
-                CorrectAnswer = src.CorrectAnswer,
-                AttemptNumber = src.AttemptNumber,
-                Accuracy = src.Accuracy
-            });
-
-        return new GameService(db, logger, mockMapper.Object);
+        return new GameService(db, logger);
     }
 
     #region SubmitAttemptAsync Tests
@@ -60,7 +40,7 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var exerciseId = Guid.NewGuid();
-        var correctAnswer = new List<string> { "ωμεν", "ςεμν" };
+        var correctAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" };
 
         db.GameAttempts.Add(new GameAttempt
         {
@@ -100,7 +80,7 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var exerciseId = Guid.NewGuid();
-        var correctAnswer = new List<string> { "ωμεν", "ςεμν" };
+        var correctAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" };
 
         db.GameAttempts.Add(new GameAttempt
         {
@@ -181,7 +161,7 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var exerciseId = Guid.NewGuid();
-        var correctAnswer = new List<string> { "ωμεν", "ςεμν", "ιτδ", "ξΰεγ" };
+        var correctAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ", "ΧΧ•Χ‘", "ΧΧ›Χ" };
 
         db.GameAttempts.Add(new GameAttempt
         {
@@ -204,7 +184,7 @@ public class GameServiceTests
         {
             StudentId = studentId,
             ExerciseId = exerciseId,
-            GivenAnswer = new List<string> { "ωμεν", "ςεμν", "wrong", "word" }
+            GivenAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ", "wrong", "word" }
         }, CancellationToken.None);
 
         // Assert
@@ -298,8 +278,8 @@ public class GameServiceTests
         var studentId = Guid.NewGuid();
         var exerciseId1 = Guid.NewGuid();
         var exerciseId2 = Guid.NewGuid();
-        var correctAnswer1 = new List<string> { "ωμεν", "ςεμν" };
-        var correctAnswer2 = new List<string> { "ΰπι", "ΰεδα" };
+        var correctAnswer1 = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" };
+        var correctAnswer2 = new List<string> { "ΧΧ•Χ‘", "ΧΧ›Χ" };
 
         db.GameAttempts.AddRange(
             // Exercise 1 - only failure (should be included)
@@ -311,7 +291,7 @@ public class GameServiceTests
                 GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer1,
-                GivenAnswer = new List<string> { "ςεμν", "ωμεν" },
+                GivenAnswer = new List<string> { "ΧΆΧ•ΧΧ", "Χ©ΧΧ•Χ" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
                 Accuracy = 0m,
@@ -326,7 +306,7 @@ public class GameServiceTests
                 GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Medium,
                 CorrectAnswer = correctAnswer2,
-                GivenAnswer = new List<string> { "ΰεδα", "ΰπι" },
+                GivenAnswer = new List<string> { "ΧΧ›Χ", "ΧΧ•Χ‘" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
                 Accuracy = 0m,
@@ -418,7 +398,7 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var exerciseId = Guid.NewGuid();
-        var correctAnswer = new List<string> { "ωμεν", "ςεμν" };
+        var correctAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" };
         var attemptId1 = Guid.NewGuid();
         var attemptId2 = Guid.NewGuid();
 
@@ -431,7 +411,7 @@ public class GameServiceTests
                 GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
-                GivenAnswer = new List<string> { "ςεμν", "ωμεν" },
+                GivenAnswer = new List<string> { "ΧΆΧ•ΧΧ", "Χ©ΧΧ•Χ" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
                 Accuracy = 0m,
@@ -475,7 +455,7 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var exerciseId = Guid.NewGuid();
-        var correctAnswer = new List<string> { "ωμεν", "ςεμν" };
+        var correctAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" };
 
         db.GameAttempts.AddRange(
             // First attempt - failure
@@ -487,7 +467,7 @@ public class GameServiceTests
                 GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
-                GivenAnswer = new List<string> { "ςεμν", "ωμεν" },
+                GivenAnswer = new List<string> { "ΧΆΧ•ΧΧ", "Χ©ΧΧ•Χ" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
                 Accuracy = 0m,
@@ -545,17 +525,17 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
 
-        var result = await service.SaveGeneratedSentencesAsync(new GeneratedSentenceDto
+        var result = await service.SaveGeneratedSentencesAsync(new SaveGeneratedSentencesRequest
         {
             StudentId = studentId,
             GameType = GameName.WordOrder,
             Difficulty = Difficulty.Easy,
-            Sentences = new List<GeneratedSentenceItem>
+            Sentences = new List<GeneratedSentenceItemRequest>
                     {
-                        new GeneratedSentenceItem
+                        new GeneratedSentenceItemRequest
                         {
-                            Text = "ωμεν ςεμν",
-                            CorrectAnswer = new List<string> { "ωμεν", "ςεμν" },
+                            Text = "Χ©ΧΧ•Χ ΧΆΧ•ΧΧ",
+                            CorrectAnswer = new List<string> { "Χ©ΧΧ•Χ", "ΧΆΧ•ΧΧ" },
                             Nikud = true
                         }
                     }

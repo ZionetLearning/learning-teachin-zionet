@@ -29,7 +29,7 @@ public class GameAccessorClient : IGameAccessorClient
             {
                 StudentId = studentId,
                 ExerciseId = request.ExerciseId,
-                GivenAnswer = request.GivenAnswer
+                GivenAnswer = request.GivenAnswer.ToList()
             };
 
             var result = await _daprClient.InvokeMethodAsync<SubmitAttemptAccessorRequest, SubmitAttemptAccessorResponse>(
@@ -111,8 +111,8 @@ public class GameAccessorClient : IGameAccessorClient
                 _logger.LogWarning("Accessor returned null history response. StudentId={StudentId}", studentId);
                 return new GetHistoryAccessorResponse
                 {
-                    Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                    Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                    Summary = summary ? new PagedResponseResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                    Detailed = !summary ? new PagedResponseResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
                 };
             }
 
@@ -136,8 +136,8 @@ public class GameAccessorClient : IGameAccessorClient
 
             return new GetHistoryAccessorResponse
             {
-                Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                Summary = summary ? new PagedResponseResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResponseResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
             };
         }
         catch (Exception ex)
@@ -146,8 +146,8 @@ public class GameAccessorClient : IGameAccessorClient
 
             return new GetHistoryAccessorResponse
             {
-                Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                Summary = summary ? new PagedResponseResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResponseResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
             };
         }
     }
@@ -271,14 +271,14 @@ public class GameAccessorClient : IGameAccessorClient
         }
     }
 
-    public async Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<SaveGeneratedSentencesAccessorResponse> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try
         {
             _logger.LogInformation("Saving generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}",
                 dto.StudentId, dto.GameType, dto.Difficulty);
 
-            var result = await _daprClient.InvokeMethodAsync<GeneratedSentenceDto, List<AttemptedSentenceResult>>(
+            var result = await _daprClient.InvokeMethodAsync<GeneratedSentenceDto, SaveGeneratedSentencesAccessorResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "games-accessor/generated-sentences",
@@ -286,7 +286,7 @@ public class GameAccessorClient : IGameAccessorClient
                 cancellationToken: ct
             );
 
-            _logger.LogInformation("Generated sentence saved for StudentId={StudentId}", dto.StudentId);
+            _logger.LogInformation("Generated sentence saved for StudentId={StudentId}, Count={Count}", dto.StudentId, result.Sentences.Count);
             return result;
         }
         catch (Exception ex)

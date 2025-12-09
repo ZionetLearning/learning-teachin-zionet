@@ -1,4 +1,3 @@
-using Manager.Models;
 using Manager.Models.Games;
 using Manager.Models.Summaries;
 using Manager.Services.Clients.Accessor.Interfaces;
@@ -396,7 +395,7 @@ public class PeriodSummarizerService : IPeriodSummarizerService
 
         var history = new GetHistoryAccessorResponse
         {
-            Detailed = new PagedResult<AttemptHistoryDto>
+            Detailed = new PagedResponseResult<AttemptHistoryDto>
             {
                 Items = allItems,
                 Page = 1,
