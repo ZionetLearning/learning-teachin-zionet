@@ -25,6 +25,13 @@ public class LessonGeneratorService : ILessonGeneratorService
 
     public async Task<EngineLessonResponse> GenerateLessonAsync(EngineLessonRequest request, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Topic))
+        {
+            throw new ArgumentException("Topic cannot be empty", nameof(request));
+        }
+
         _logger.LogInformation("Generating lesson for topic: {Topic}", request.Topic);
 
         var func = _kernel.Plugins["Lessons"]["Generate"];
@@ -49,12 +56,21 @@ public class LessonGeneratorService : ILessonGeneratorService
             throw new InvalidOperationException("AI returned an empty response");
         }
 
-        var lesson = JsonSerializer.Deserialize<EngineLessonResponse>(json, JsonOptions);
-
-        if (lesson is null)
+        EngineLessonResponse? lesson;
+        try
         {
-            _logger.LogError("Failed to parse AI response for topic: {Topic}. Response: {Response}", request.Topic, json);
-            throw new InvalidOperationException("Failed to parse AI response");
+            lesson = JsonSerializer.Deserialize<EngineLessonResponse>(json, JsonOptions);
+
+            if (lesson is null)
+            {
+                _logger.LogError("Failed to parse AI response for topic: {Topic}. Response: {Response}", request.Topic, json);
+                throw new InvalidOperationException("Failed to parse AI response");
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to parse AI response JSON for topic: {Topic}. Response: {Response}", request.Topic, json);
+            throw new InvalidOperationException("Failed to parse AI response", ex);
         }
 
         if (lesson.ContentSections is null || lesson.ContentSections.Count == 0)
