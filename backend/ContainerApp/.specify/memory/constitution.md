@@ -55,7 +55,7 @@ or via profiles, but MUST be explicit and tested for key flows.
 
 ### V. Testing Discipline and Observability
 
-IntrgrationTests are in a different project and not part of this scope.
+IntegrationTests are in a different project and not part of this scope.
 for very complicated code we have UnitTest
 Logging MUST use structured `ILogger` with clear messages and identifiers
 (user, role, ids) to support debugging of async workflows.
