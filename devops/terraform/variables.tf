@@ -236,3 +236,22 @@ variable "enable_langfuse" {
   type        = bool
   default     = true
 }
+
+#------------- Azure Container Registry Variables -------------
+variable "acr_server" {
+  description = "Azure Container Registry server URL"
+  type        = string
+  default     = "teachindevacr.azurecr.io"
+}
+
+variable "acr_username" {
+  description = "Azure Container Registry username - provided by GitHub Actions"
+  type        = string
+  sensitive   = true
+}
+
+variable "acr_password" {
+  description = "Azure Container Registry password - provided by GitHub Actions"
+  type        = string
+  sensitive   = true
+}

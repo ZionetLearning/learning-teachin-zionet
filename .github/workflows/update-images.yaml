@@ -33,11 +33,6 @@ on:
         description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
         required: false
         type: string
-      use_keda:
-        description: 'Enable KEDA setup workflow'
-        type: boolean
-        required: false
-        default: true
       unlock_featest:
         description: 'Set to true to only unlock featest environment (skips deployment)'
         required: false
@@ -52,10 +47,6 @@ on:
         required: false
         type: string
         default: ''
-      use_keda:
-        required: false
-        type: boolean
-        default: false
         
 jobs:
   lock-featest:

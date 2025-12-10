@@ -30,11 +30,6 @@ on:
           options: 
             - 'all'
             - 'none'
-        use_keda:
-          description: 'Enable KEDA setup workflow'
-          type: boolean
-          required: false
-          default: true
           
 jobs:
   validate-authorization:
@@ -73,9 +68,7 @@ jobs:
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
-      image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
-      use_keda: ${{ fromJson(github.event.inputs.use_keda) }}
     secrets: inherit
  
   deploy-frontend:
