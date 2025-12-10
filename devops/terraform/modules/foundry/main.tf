@@ -28,3 +28,23 @@ resource "azurerm_cognitive_account" "foundry" {
 
   depends_on = [azurerm_resource_group.foundry]
 }
+
+# Azure Speech Service
+resource "azurerm_cognitive_account" "speech" {
+  name                = var.speech_service_name
+  location            = azurerm_resource_group.foundry.location
+  resource_group_name = azurerm_resource_group.foundry.name
+  kind                = "SpeechServices"
+  sku_name            = "S0"
+
+  # Use Entra ID authentication for consistency
+  local_auth_enabled = false
+
+  tags = var.tags
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+
+  depends_on = [azurerm_resource_group.foundry]
+}

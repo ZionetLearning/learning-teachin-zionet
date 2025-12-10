@@ -28,3 +28,24 @@ output "foundry_key" {
   value       = azurerm_cognitive_account.foundry.primary_access_key
   sensitive   = true
 }
+
+output "speech_id" {
+  description = "ID of the Azure Speech service"
+  value       = azurerm_cognitive_account.speech.id
+}
+
+output "speech_name" {
+  description = "Name of the Azure Speech service"
+  value       = azurerm_cognitive_account.speech.name
+}
+
+output "speech_endpoint" {
+  description = "Endpoint URL of the Azure Speech service"
+  value       = azurerm_cognitive_account.speech.endpoint
+}
+
+output "speech_key" {
+  description = "Primary access key of the Azure Speech service"
+  value       = azurerm_cognitive_account.speech.primary_access_key
+  sensitive   = true
+}

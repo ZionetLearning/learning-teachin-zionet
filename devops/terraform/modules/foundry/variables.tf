@@ -4,6 +4,12 @@ variable "foundry_name" {
   default     = "teachin-foundry"
 }
 
+variable "speech_service_name" {
+  description = "Name of the Azure Speech service"
+  type        = string
+  default     = "teachin-speech"
+}
+
 variable "location" {
   description = "Azure region"
   type        = string
