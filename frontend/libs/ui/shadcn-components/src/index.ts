@@ -1,6 +1,5 @@
 import "./index.css";
-export { cn } from "./utils";
-export { useIsMobile } from "./hooks/use-mobile";
+export { cn, useIsMobile } from "./utils";
 export * from "./alert";
 export * from "./badge";
 export * from "./button";

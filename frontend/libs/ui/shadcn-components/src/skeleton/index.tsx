@@ -1,7 +1,10 @@
-import { cn } from "@ui-shadcn-components/utils";
+import { type HTMLAttributes } from "react";
 
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />;
+import { cn } from "@ui-shadcn-components/utils";
+import { skeletonStyles } from "./style";
+
+function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn(skeletonStyles, className)} {...props} />;
 }
 
 export { Skeleton };
