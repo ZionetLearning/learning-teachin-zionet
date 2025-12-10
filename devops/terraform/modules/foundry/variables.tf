@@ -22,8 +22,3 @@ variable "resource_group_name" {
   default     = "azure-open-ai-playground-rg"
 }
 
-variable "tags" {
-  description = "Tags to apply to resources"
-  type        = map(string)
-  default     = {}
-}

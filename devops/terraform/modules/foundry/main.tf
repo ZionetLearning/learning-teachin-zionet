@@ -2,8 +2,6 @@
 resource "azurerm_resource_group" "foundry" {
   name     = var.resource_group_name
   location = var.location
-
-  tags = var.tags
 }
 
 # Azure AI Foundry (Cognitive Services Account with AIServices kind)
