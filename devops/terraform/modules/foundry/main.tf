@@ -20,12 +20,6 @@ resource "azurerm_cognitive_account" "foundry" {
   # Custom subdomain for DNS names
   custom_subdomain_name = var.foundry_name
 
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = [tags]
-  }
-
   depends_on = [azurerm_resource_group.foundry]
 }
 
@@ -37,14 +31,9 @@ resource "azurerm_cognitive_account" "speech" {
   kind                = "SpeechServices"
   sku_name            = "F0"
 
-  # Use Entra ID authentication for consistency
-  local_auth_enabled = false
+  # Enable local auth to allow API key access
+  local_auth_enabled = true
 
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = [tags]
-  }
 
   depends_on = [azurerm_resource_group.foundry]
 }
