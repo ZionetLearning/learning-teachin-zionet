@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
-  darkMode: ["class"],
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
@@ -89,4 +89,3 @@ export default {
   },
   plugins: [tailwindcssAnimate],
 } satisfies Config;
-
