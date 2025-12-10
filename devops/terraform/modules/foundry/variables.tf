@@ -1,5 +1,5 @@
 variable "foundry_name" {
-  description = "Name of the Azure AI Foundry resources"
+  description = "Name of the Azure OpenAI service"
   type        = string
 }
 

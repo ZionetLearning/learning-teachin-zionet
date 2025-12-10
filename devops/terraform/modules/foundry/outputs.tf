@@ -1,19 +1,20 @@
-output "foundry_id" {
-  description = "ID of the AI Foundry"
-  value       = azurerm_ai_foundry.foundry.id
+output "openai_id" {
+  description = "ID of the Azure OpenAI service"
+  value       = azurerm_cognitive_services_account.openai.id
 }
 
-output "foundry_name" {
-  description = "Name of the AI Foundry"
-  value       = azurerm_ai_foundry.foundry.name
+output "openai_name" {
+  description = "Name of the Azure OpenAI service"
+  value       = azurerm_cognitive_services_account.openai.name
 }
 
-output "storage_account_id" {
-  description = "ID of the storage account"
-  value       = azurerm_storage_account.foundry.id
+output "openai_endpoint" {
+  description = "Endpoint URL of the Azure OpenAI service"
+  value       = azurerm_cognitive_services_account.openai.endpoint
 }
 
-output "key_vault_id" {
-  description = "ID of the Key Vault"
-  value       = azurerm_key_vault.foundry.id
+output "openai_key" {
+  description = "Primary access key of the Azure OpenAI service"
+  value       = azurerm_cognitive_services_account.openai.primary_access_key
+  sensitive   = true
 }
