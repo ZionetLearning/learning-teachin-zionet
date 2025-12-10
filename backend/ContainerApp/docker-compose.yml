@@ -311,10 +311,10 @@ services:
         retries: 3
 
   # ------------------------ AI Engine Service ---------------------------
-  aiengine:
+  ai-engine:
     build:
       context: ./Engines/AIEngine
-    container_name: aiengine
+    container_name: ai-engine
     ports:
       - "5020:5020"
     environment:
@@ -332,15 +332,15 @@ services:
       retries: 3
 
 
-  aiengine-dapr:
+  ai-engine-dapr:
     image: "daprio/daprd:latest"
-    container_name: aiengine-dapr
+    container_name: ai-engine-dapr
     depends_on:
-      aiengine:
+      ai-engine:
         condition: service_started
     command: [
       "./daprd",
-      "-app-id", "aiengine",
+      "-app-id", "ai-engine",
       "-app-port", "5020",
       "-placement-host-address", "placement:50006",
       "-dapr-http-port", "3500",
@@ -349,7 +349,7 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    network_mode: "service:aiengine"
+    network_mode: "service:ai-engine"
     healthcheck:
         test: ["CMD", "nc", "-z", "localhost", "3500"]
         interval: 10s

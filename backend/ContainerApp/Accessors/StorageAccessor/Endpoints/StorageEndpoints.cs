@@ -4,7 +4,7 @@ public static class StorageEndpoints
 {
     public static void MapStorageEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/storage")
+        var group = app.MapGroup("storage-accessor")
             .WithTags("Storage");
     }
 }

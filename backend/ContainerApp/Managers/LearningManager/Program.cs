@@ -29,11 +29,4 @@ app.UseCors();
 
 app.MapLearningEndpoints();
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    service = "LearningManager"
-}))
-.WithTags("Health");
-
 app.Run();

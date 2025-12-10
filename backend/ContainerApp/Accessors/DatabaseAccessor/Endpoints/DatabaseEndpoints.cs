@@ -5,9 +5,8 @@ namespace DatabaseAccessor.Endpoints
         // Demo file
         public static void MapDatabaseEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/database")
+            var group = app.MapGroup("database-accessor")
                 .WithTags("Database");
-
 
         }
     }
