@@ -214,10 +214,6 @@ services:
       - redis
     networks:
       - microservice-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5030/health"]
-      interval: 10s
-      retries: 3
 
 
   learning-manager-dapr:
@@ -326,10 +322,6 @@ services:
     networks:
       - microservice-net
       - sb-emulator
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5020/health"]
-      interval: 10s
-      retries: 3
 
 
   ai-engine-dapr:
@@ -441,10 +433,6 @@ services:
     networks:
       - microservice-net
       - sb-emulator
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
-      interval: 10s
-      retries: 3
 
 
   database-accessor-dapr:
@@ -480,7 +468,6 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:5011
       - ASPNETCORE_ENVIRONMENT=Development
-      - Storage__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=MF9oMXNAU2FtcGxlS2V5X2Jhc2U2NF9GT1JfREVWLj09;BlobEndpoint=http://azurite:10000/devstoreaccount1
     depends_on:
       azurite:
         condition: service_started
@@ -491,10 +478,6 @@ services:
     networks:
       - microservice-net
       - sb-emulator
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5011/health"]
-      interval: 10s
-      retries: 3
 
 
   storage-accessor-dapr:
