@@ -64,11 +64,29 @@ engine:
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
 
+ai-engine:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5005"
+
 accessor:
   image:
     tag: "1.0.0"
   env:
     ASPNETCORE_URLS: "http://+:5003"
+
+storage-accessor:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5006"
+
+database-accessor:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5007"
 
 # Langfuse Configuration (disabled in prod)
 langfuse:

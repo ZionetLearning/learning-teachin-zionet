@@ -240,6 +240,32 @@ engine:
       cpu: "500m"
       memory: "512Mi"
 
+ai-engine:
+  name: ai-engine
+  labels:
+    selectorKey: io.kompose.service
+    selectorValue: ai-engine
+  image:
+    name: ai-engine
+    # tag: defaults to global.environment, set by CI/CD
+  ports:
+    container: 5005
+    service: 5005
+  service:
+    type: ClusterIP
+  dapr:
+    appId: ai-engine
+    appPort: 5005
+  env:
+    ASPNETCORE_URLS: "http://+:5005"
+  resources:
+    requests:
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
 accessor:
   name: accessor
   labels:
