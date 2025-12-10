@@ -1,6 +1,16 @@
 name: Backend - Build and push images
 
 on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'The deployment environment (e.g., dev, prod)'
+        required: true
+        default: 'prod'
+      environment_name:
+        description: 'The name tag for the environment (e.g., dev, prod)'
+        required: true
+        default: 'prod'
   workflow_call:
     inputs:
       environment:
@@ -9,33 +19,13 @@ on:
       environment_name:
         required: true
         type: string
-    outputs:
-      image_tag:
-        description: "The generated image tag (commit hash)"
-        value: ${{ jobs.generate_tag.outputs.image_tag }}
 
 permissions:
   contents: read
 
 jobs:
-  generate_tag:
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.set-tag.outputs.image_tag }}
-    steps:
-      - name: Set image tag
-        id: set-tag
-        env:
-          ENV_TAG: ${{ inputs.environment_name }}
-        run: |
-          SHORT_SHA="${{ github.sha }}"
-          SHORT_SHA="${SHORT_SHA:0:7}"
-          FULL_TAG="${ENV_TAG}-${SHORT_SHA}"
-          echo "image_tag=${FULL_TAG}" >> $GITHUB_OUTPUT
-
   build_and_push:
-    needs: generate_tag
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -78,7 +68,7 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_SHA: ${{ github.sha }}
-          ENV_TAG: ${{ inputs.environment_name }}
+          ENV_TAG: ${{ inputs.environment_name || github.event.inputs.environment_name }}
         run: |
           ACR_LOGIN_SERVER="teachindevacr.azurecr.io"
           IMAGE_NAME="${ACR_LOGIN_SERVER}/${{ matrix.service.name }}"
