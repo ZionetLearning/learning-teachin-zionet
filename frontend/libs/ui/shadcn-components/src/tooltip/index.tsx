@@ -6,7 +6,7 @@ import {
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 import { cn } from "@ui-shadcn-components/utils";
-// TODO: find out what provider is here for
+
 const TooltipProvider = TooltipPrimitive.Provider;
 
 const Tooltip = TooltipPrimitive.Root;
