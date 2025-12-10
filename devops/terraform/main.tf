@@ -11,6 +11,28 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
+
+resource "azurerm_resource_group" "playground" {
+  name     = "azure-open-ai-playground-rg"
+  location = "France Central"
+}
+
+# Azure AI Foundry resources in playground resource group
+module "foundry" {
+  source              = "./modules/foundry"
+  foundry_name        = "teachin-foundry"
+  location            = azurerm_resource_group.playground.location
+  resource_group_name = azurerm_resource_group.playground.name
+  
+  tags = {
+    Environment = "playground"
+    Project     = "AI-Foundry"
+    ManagedBy   = "terraform"
+  }
+  
+  depends_on = [azurerm_resource_group.playground]
+}
+
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
