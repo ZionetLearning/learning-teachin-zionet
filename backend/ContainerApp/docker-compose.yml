@@ -200,6 +200,49 @@ services:
         interval: 10s
         retries: 3
 
+  # ------------------------ Learning Manager Service ---------------------------
+  learning-manager:
+    build:
+      context: ./Managers/LearningManger
+    container_name: learning-manager
+    ports:
+      - "5030:5030"
+    environment:
+      - ASPNETCORE_URLS=http://+:5030
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - redis
+    networks:
+      - microservice-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5030/health"]
+      interval: 10s
+      retries: 3
+
+
+  learning-manager-dapr:
+    image: "daprio/daprd:latest"
+    container_name: learning-manager-dapr
+    depends_on:
+      learning-manager:
+        condition: service_started
+
+    command: [
+      "./daprd",
+      "-app-id", "learning-manager",
+      "-app-port", "5030",
+      "-placement-host-address", "placement:50006",
+      "-dapr-http-port", "3500",
+      "--resources-path", "/dapr/components",
+      "-config", "/dapr/config.yaml"
+    ]
+    volumes:
+      - ./dapr:/dapr
+    network_mode: "service:learning-manager"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
+        interval: 10s
+        retries: 3
 
   # ------------------------ ApiGateway Service ---------------------------
 

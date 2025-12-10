@@ -64,6 +64,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engines", "Engines", "{9952
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIEngine", "Engines\AIEngine\AIEngine.csproj", "{AC8ACD40-D6DF-4D30-B5AD-F7854E12F9FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LearningManger", "Managers\LearningManger\LearningManger.csproj", "{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -143,6 +145,12 @@ Global
 		{AC8ACD40-D6DF-4D30-B5AD-F7854E12F9FA}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{AC8ACD40-D6DF-4D30-B5AD-F7854E12F9FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC8ACD40-D6DF-4D30-B5AD-F7854E12F9FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -156,6 +164,7 @@ Global
 		{345A444B-BE52-4FAF-9ADA-9E9856477F21} = {EEAF9942-5494-4F90-B4EC-49A4D3419FC7}
 		{60D6F3CF-AD13-447E-A9D4-4344A5CBD6E2} = {EEAF9942-5494-4F90-B4EC-49A4D3419FC7}
 		{AC8ACD40-D6DF-4D30-B5AD-F7854E12F9FA} = {9952DFBB-690F-4972-970A-B9867168FF21}
+		{7676A7F1-A64B-4C8A-B270-A84C6A710FCA} = {14F3D1CA-8A87-483E-8EF5-1DB761B63D4B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2C733277-52CE-4338-A414-EF30D2066690}

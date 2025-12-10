@@ -1,11 +1,10 @@
-using AIEngine.Configuration;
-using AIEngine.Endpoints;
+using LearningManger.Configuration;
+using LearningManger.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add configuration
-builder.Services.Configure<AISettings>(
-    builder.Configuration.GetSection("AISettings"));
+builder.Services.Configure<LearningSettings>(
+    builder.Configuration.GetSection("LearningSettings"));
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -19,17 +18,22 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddHttpClient();
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+
 }
 
 app.UseCors();
 
-app.MapAIEndpoints();
+app.MapLearningEndpoints();
 
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "LearningManager"
+}))
+.WithTags("Health");
 
 app.Run();
