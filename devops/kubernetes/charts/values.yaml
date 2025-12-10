@@ -135,6 +135,34 @@ manager:
       cpu: "500m"
       memory: "512Mi"
 
+learning-manager:
+  name: learning-manager
+  labels:
+    selectorKey: io.kompose.service
+    selectorValue: learning-manager
+  image:
+    name: learning-manager
+    # tag: defaults to global.environment, set by CI/CD
+  ports:
+    container: 5004
+    service: 80
+  service:
+    type: ClusterIP
+  dapr:
+    appId: learning-manager
+    appPort: 5004
+  env:
+    ASPNETCORE_URLS: "http://+:5004"
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
 engine:
   name: engine
   labels:

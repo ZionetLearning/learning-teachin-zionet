@@ -35,6 +35,21 @@ manager:
       clusterIssuer: letsencrypt-prod
       secretName: teachin-tls
 
+learning-manager:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5004"
+  # Consider adding resource limits here if you introduce them in templates
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api-learning
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
+
 engine:
   image:
     tag: "1.0.0"

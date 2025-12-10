@@ -46,6 +46,23 @@ manager:
       enabled: true
       clusterIssuer: letsencrypt-prod
       secretName: teachin-tls
+
+learning-manager:
+  image:
+    name: learning-manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  # service, ports, labels inherit from base values.yaml
+  env:
+    ASPNETCORE_URLS: "http://+:5004"
+  # secrets inherit from base values.yaml
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api-learning
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
       
 engine:
   image:
