@@ -1,6 +1,6 @@
 import {
   createContext,
-  ElementRef,
+  ComponentRef,
   forwardRef,
   useCallback,
   useContext,
@@ -277,7 +277,7 @@ const Sidebar = forwardRef<
 Sidebar.displayName = "Sidebar";
 
 const SidebarTrigger = forwardRef<
-  ElementRef<typeof Button>,
+  ComponentRef<typeof Button>,
   ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar();
@@ -348,7 +348,7 @@ const SidebarInset = forwardRef<HTMLDivElement, ComponentProps<"main">>(
 SidebarInset.displayName = "SidebarInset";
 
 const SidebarInput = forwardRef<
-  ElementRef<typeof Input>,
+  ComponentRef<typeof Input>,
   ComponentProps<typeof Input>
 >(({ className, ...props }, ref) => {
   return (
@@ -394,7 +394,7 @@ const SidebarFooter = forwardRef<HTMLDivElement, ComponentProps<"div">>(
 SidebarFooter.displayName = "SidebarFooter";
 
 const SidebarSeparator = forwardRef<
-  ElementRef<typeof Separator>,
+  ComponentRef<typeof Separator>,
   ComponentProps<typeof Separator>
 >(({ className, ...props }, ref) => {
   return (

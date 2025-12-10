@@ -1,14 +1,18 @@
 import { forwardRef, type HTMLAttributes } from "react";
 
 import { cn } from "@ui-shadcn-components/utils";
-import {
-  cardStyles,
-  cardHeaderStyles,
-  cardTitleStyles,
-  cardDescriptionStyles,
-  cardContentStyles,
-  cardFooterStyles,
-} from "./style";
+
+const cardStyles = "rounded-lg border bg-card text-card-foreground shadow-sm";
+
+const cardHeaderStyles = "flex flex-col space-y-1.5 p-6";
+
+const cardTitleStyles = "text-2xl font-semibold leading-none tracking-tight";
+
+const cardDescriptionStyles = "text-sm text-muted-foreground";
+
+const cardContentStyles = "p-6 pt-0";
+
+const cardFooterStyles = "flex items-center p-6 pt-0";
 
 const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
