@@ -1,5 +1,3 @@
-# Azure OpenAI Module
-
 # Azure OpenAI Service
 resource "azurerm_cognitive_account" "openai" {
   name                = var.foundry_name
