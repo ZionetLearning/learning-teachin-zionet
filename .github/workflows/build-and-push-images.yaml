@@ -46,12 +46,31 @@ jobs:
           - name: accessor
             context: backend/ContainerApp/Accessor
             dockerfile: backend/ContainerApp/Accessor/Dockerfile
+
+          - name: storage-accessor
+            context: backend/ContainerApp/Accessors/StorageAccessor
+            dockerfile: backend/ContainerApp/Accessors/StorageAccessor/Dockerfile
+
+          - name: database-accessor
+            context: backend/ContainerApp/Accessors/DatabaseAccessor
+            dockerfile: backend/ContainerApp/Accessors/DatabaseAccessor/Dockerfile
+
           - name: manager
             context: backend/ContainerApp/Manager
             dockerfile: backend/ContainerApp/Manager/Dockerfile
+
+          - name: learning-manager
+            context: backend/ContainerApp/Managers/LearningManager
+            dockerfile: backend/ContainerApp/Managers/LearningManager/Dockerfile
+
           - name: engine
             context: backend/ContainerApp/Engine
             dockerfile: backend/ContainerApp/Engine/Dockerfile
+
+          - name: ai-engine
+            context: backend/ContainerApp/Engines/AIEngine
+            dockerfile: backend/ContainerApp/Engines/AIEngine/Dockerfile
+            
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
