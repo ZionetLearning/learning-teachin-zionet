@@ -11,7 +11,7 @@ import {
   dialogFooterStyles,
   dialogTitleStyles,
   dialogDescriptionStyles,
-} from "./dialog.styles";
+} from "./style";
 
 const Dialog = DialogPrimitive.Root;
 

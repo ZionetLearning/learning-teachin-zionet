@@ -2,7 +2,7 @@ import { forwardRef, type ElementRef, type ComponentPropsWithoutRef } from "reac
 import * as LabelPrimitive from "@radix-ui/react-label";
 
 import { cn } from "@ui-shadcn-components/utils";
-import { labelVariants, type LabelVariants } from "./label.styles";
+import { labelVariants, type LabelVariants } from "./style";
 
 const Label = forwardRef<
   ElementRef<typeof LabelPrimitive.Root>,

@@ -1,7 +1,7 @@
 import { forwardRef, type ComponentProps } from "react";
 
 import { cn } from "@ui-shadcn-components/utils";
-import { inputStyles } from "./input.styles";
+import { inputStyles } from "./style";
 
 const Input = forwardRef<HTMLInputElement, ComponentProps<"input">>(({ className, type, ...props }, ref) => {
   return (

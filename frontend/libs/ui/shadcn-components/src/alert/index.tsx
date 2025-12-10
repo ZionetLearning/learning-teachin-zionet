@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes } from "react";
 
 import { cn } from "@ui-shadcn-components/utils";
-import { alertVariants, alertTitleStyles, alertDescriptionStyles, type AlertVariants } from "./alert.styles";
+import { alertVariants, alertTitleStyles, alertDescriptionStyles, type AlertVariants } from "./style";
 
 const Alert = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & AlertVariants>(
   ({ className, variant, ...props }, ref) => (

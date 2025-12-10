@@ -1,7 +1,7 @@
 import { type HTMLAttributes } from "react";
 
 import { cn } from "@ui-shadcn-components/utils";
-import { badgeVariants, type BadgeVariants } from "./badge.styles";
+import { badgeVariants, type BadgeVariants } from "./style";
 
 export interface BadgeProps extends HTMLAttributes<HTMLDivElement>, BadgeVariants {}
 

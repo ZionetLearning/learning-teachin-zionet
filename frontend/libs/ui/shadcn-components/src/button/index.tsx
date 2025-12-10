@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Slot } from "@radix-ui/react-slot";
 
 import { cn } from "@ui-shadcn-components/utils";
-import { buttonVariants, type ButtonVariants } from "./button.styles";
+import { buttonVariants, type ButtonVariants } from "./style";
 
 export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,

@@ -8,7 +8,7 @@ import {
   cardDescriptionStyles,
   cardContentStyles,
   cardFooterStyles,
-} from "./card.styles";
+} from "./style";
 
 const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
