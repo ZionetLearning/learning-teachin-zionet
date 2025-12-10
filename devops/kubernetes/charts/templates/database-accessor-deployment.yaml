@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.database-accessor.name }}
+  namespace: {{ include "app.namespace" . }}
+  labels:
+    {{ .Values.database-accessor.labels.selectorKey }}: {{ .Values.database-accessor.labels.selectorValue }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ .Values.database-accessor.labels.selectorKey }}: {{ .Values.database-accessor.labels.selectorValue }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.database-accessor.labels.selectorKey }}: {{ .Values.database-accessor.labels.selectorValue }}
+      annotations:
+        {{ include "app.dapr.annotations" (dict
+              "enabled" .Values.global.dapr.enabled
+              "appId"   (.Values.database-accessor.dapr.appId | default .Values.database-accessor.name)
+              "appPort" .Values.database-accessor.dapr.appPort
+              "config"  (.Values.global.dapr.configName | default "dapr-config")
+          ) | nindent 8 }}
+        dapr.io/sidecar-cpu-request:  "{{ .Values.global.dapr.sidecar.requests.cpu }}"
+        dapr.io/sidecar-memory-request: "{{ .Values.global.dapr.sidecar.requests.memory }}"
+        dapr.io/sidecar-cpu-limit:    "{{ .Values.global.dapr.sidecar.limits.cpu }}"
+        dapr.io/sidecar-memory-limit: "{{ .Values.global.dapr.sidecar.limits.memory }}"
+    spec:
+      {{- if .Values.global.imagePullSecret.enabled }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
+      {{- include "app.spot.affinity" . | nindent 6 }}
+      {{- include "app.spot.tolerations" . | nindent 6 }}
+      containers:
+        - name: {{ .Values.database-accessor.name }}
+          image: {{ include "app.image" (dict "name" .Values.database-accessor.image.name "tag" .Values.database-accessor.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.database-accessor.ports.container }}
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_URLS
+              value: "{{ .Values.database-accessor.env.ASPNETCORE_URLS }}"
+          resources:
+            {{- toYaml .Values.database-accessor.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.database-accessor.name }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: {{ .Values.database-accessor.service.type }}
+  selector:
+    {{ .Values.database-accessor.labels.selectorKey }}: {{ .Values.database-accessor.labels.selectorValue }}
+  ports:
+    - port: {{ .Values.database-accessor.ports.service }}
+      targetPort: {{ .Values.database-accessor.ports.container }}

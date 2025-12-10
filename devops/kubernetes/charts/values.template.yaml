@@ -104,6 +104,20 @@ accessor:
   env:
     ASPNETCORE_URLS: "http://+:5003"
 
+storage-accessor:
+  image:
+    name: storage-accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5006"
+
+database-accessor:
+  image:
+    name: database-accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5007"
+
 # Langfuse Configuration (dev only)
 langfuse:
   enabled: true

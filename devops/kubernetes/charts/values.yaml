@@ -318,6 +318,58 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
+storage-accessor:
+  name: storage-accessor
+  labels:
+    selectorKey: app
+    selectorValue: storage-accessor
+  image:
+    name: storage-accessor
+    # tag: defaults to global.environment, set by CI/CD
+  ports:
+    container: 5006
+    service: 80
+  service:
+    type: ClusterIP
+  dapr:
+    appId: storage-accessor
+    appPort: 5006
+  env:
+    ASPNETCORE_URLS: "http://+:5006"
+  resources:
+    requests:
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+database-accessor:
+  name: database-accessor
+  labels:
+    selectorKey: app
+    selectorValue: database-accessor
+  image:
+    name: database-accessor
+    # tag: defaults to global.environment, set by CI/CD
+  ports:
+    container: 5007
+    service: 80
+  service:
+    type: ClusterIP
+  dapr:
+    appId: database-accessor
+    appPort: 5007
+  env:
+    ASPNETCORE_URLS: "http://+:5007"
+  resources:
+    requests:
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
 dapr:
   # Shared connection for Service Bus components
   connection:
