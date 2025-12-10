@@ -35,7 +35,7 @@ resource "azurerm_cognitive_account" "speech" {
   location            = azurerm_resource_group.foundry.location
   resource_group_name = azurerm_resource_group.foundry.name
   kind                = "SpeechServices"
-  sku_name            = "S0"
+  sku_name            = "F0"
 
   # Use Entra ID authentication for consistency
   local_auth_enabled = false
