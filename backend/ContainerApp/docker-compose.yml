@@ -2,6 +2,8 @@ version: "3.9"
 
 services:
 
+  # ==================== INFRASTRUCTURE SERVICES ====================
+
   # -------------------- Dapr placement service --------------------
 
   placement:
@@ -150,6 +152,8 @@ services:
         timeout: 2s
         retries: 10
 
+  # ==================== APPLICATION SERVICES ====================
+
   # ------------------------ Manager Service ---------------------------
   manager:
     build:
@@ -197,7 +201,7 @@ services:
         retries: 3
 
 
-      # ------------------------ ApiGateway Service ---------------------------
+  # ------------------------ ApiGateway Service ---------------------------
 
   apigateway:
     build:
@@ -216,6 +220,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # ==================== ENGINE SERVICES ====================
 
   # ------------------------ Engine Service ---------------------------
   engine:
@@ -260,6 +266,53 @@ services:
         test: ["CMD", "nc", "-z", "localhost", "3500"]
         interval: 10s
         retries: 3
+
+  # ------------------------ AI Engine Service ---------------------------
+  aiengine:
+    build:
+      context: ./Engines/AIEngine
+    container_name: aiengine
+    ports:
+      - "5020:5020"
+    environment:
+      - ASPNETCORE_URLS=http://+:5020
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - servicebus-emulator
+      - redis
+    networks:
+      - microservice-net
+      - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5020/health"]
+      interval: 10s
+      retries: 3
+
+
+  aiengine-dapr:
+    image: "daprio/daprd:latest"
+    container_name: aiengine-dapr
+    depends_on:
+      aiengine:
+        condition: service_started
+    command: [
+      "./daprd",
+      "-app-id", "aiengine",
+      "-app-port", "5020",
+      "-placement-host-address", "placement:50006",
+      "-dapr-http-port", "3500",
+      "--resources-path", "/dapr/components",
+      "-config", "/dapr/config.yaml"
+    ]
+    volumes:
+      - ./dapr:/dapr
+    network_mode: "service:aiengine"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
+        interval: 10s
+        retries: 3
+
+  # ==================== ACCESSOR SERVICES ====================
 
   # ------------------------ Accessor Service ---------------------------
   accessor:
@@ -320,6 +373,109 @@ services:
         interval: 10s
         retries: 3
 
+  # ------------------------ Database Accessor Service ---------------------------
+  database-accessor:
+    build:
+      context: ./Accessors/DatabaseAccessor
+    container_name: database-accessor
+    ports:
+      - "5010:5010"
+    environment:
+      - ASPNETCORE_URLS=http://+:5010
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=postgres_db
+      - DB_USER=postgres
+      - DB_PASS=postgres
+    depends_on:
+      postgres:
+        condition: service_started
+      servicebus-emulator:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - microservice-net
+      - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
+      interval: 10s
+      retries: 3
+
+
+  database-accessor-dapr:
+    image: "daprio/daprd:latest"
+    container_name: database-accessor-dapr
+    depends_on:
+      database-accessor:
+        condition: service_started
+    command: [
+      "./daprd",
+      "-app-id", "database-accessor",
+      "-app-port", "5010",
+      "-placement-host-address", "placement:50006",
+      "-dapr-http-port", "3500",
+      "--resources-path", "/dapr/components",
+      "-config", "/dapr/config.yaml"
+    ]
+    volumes:
+      - ./dapr:/dapr
+    network_mode: "service:database-accessor"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
+        interval: 10s
+        retries: 3
+
+  # ------------------------ Storage Accessor Service ---------------------------
+  storage-accessor:
+    build:
+      context: ./Accessors/StorageAccessor
+    container_name: storage-accessor
+    ports:
+      - "5011:5011"
+    environment:
+      - ASPNETCORE_URLS=http://+:5011
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Storage__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=MF9oMXNAU2FtcGxlS2V5X2Jhc2U2NF9GT1JfREVWLj09;BlobEndpoint=http://azurite:10000/devstoreaccount1
+    depends_on:
+      azurite:
+        condition: service_started
+      servicebus-emulator:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - microservice-net
+      - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5011/health"]
+      interval: 10s
+      retries: 3
+
+
+  storage-accessor-dapr:
+    image: "daprio/daprd:latest"
+    container_name: storage-accessor-dapr
+    depends_on:
+      storage-accessor:
+        condition: service_started
+    command: [
+      "./daprd",
+      "-app-id", "storage-accessor",
+      "-app-port", "5011",
+      "-placement-host-address", "placement:50006",
+      "-dapr-http-port", "3500",
+      "--resources-path", "/dapr/components",
+      "-config", "/dapr/config.yaml"
+    ]
+    volumes:
+      - ./dapr:/dapr
+    network_mode: "service:storage-accessor"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
+        interval: 10s
+        retries: 3
 
 
 # ------------------------ Shared Networks ---------------------------
