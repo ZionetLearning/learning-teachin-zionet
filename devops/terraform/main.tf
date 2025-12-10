@@ -11,6 +11,11 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
+# Azure Container Registry with its own resource group
+module "acr" {
+  source = "./modules/acr"
+}
+
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
