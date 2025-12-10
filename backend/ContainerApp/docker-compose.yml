@@ -203,7 +203,7 @@ services:
   # ------------------------ Learning Manager Service ---------------------------
   learning-manager:
     build:
-      context: ./Managers/LearningManger
+      context: ./Managers/LearningManager
     container_name: learning-manager
     ports:
       - "5030:5030"
