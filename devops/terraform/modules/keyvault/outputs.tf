@@ -1,11 +1,11 @@
 output "resource_group_id" {
   description = "ID of the Key Vault resource group"
-  value       = azurerm_resource_group.keyvault.id
+  value       = var.create_resource_group ? azurerm_resource_group.keyvault[0].id : null
 }
 
 output "resource_group_name" {
   description = "Name of the Key Vault resource group"
-  value       = azurerm_resource_group.keyvault.name
+  value       = var.create_resource_group ? azurerm_resource_group.keyvault[0].name : var.resource_group_name
 }
 
 output "key_vault_id" {
