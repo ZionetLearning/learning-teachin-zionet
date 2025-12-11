@@ -75,7 +75,7 @@ non-production environment before merge.
 
 ## Architecture & Boundaries
 
-The backend MUST remain a .NET 9, Dapr-based system organized around
+The backend MUST remain a .NET 10, Dapr-based system organized around
 three service roles (Manager, Engine, Accessor) for the learning
 platform, serving Students, Teachers, and Admins with clearly scoped
 access. There MAY be multiple services in each role (e.g., several
