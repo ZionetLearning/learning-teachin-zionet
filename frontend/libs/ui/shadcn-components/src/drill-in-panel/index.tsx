@@ -86,6 +86,8 @@ export const DrillInPanel = ({
     (student) => student.hasAlert,
   ).length;
 
+  const alertStudents = selectedStudents.filter((student) => student.hasAlert);
+
   const progressRanges = {
     high: selectedStudents.filter((student) => student.progress >= 75).length,
     medium: selectedStudents.filter(
@@ -156,59 +158,23 @@ export const DrillInPanel = ({
               )}
             </h3>
             <div className="space-y-3 text-xs">
-              <div className="p-2 border border-alert bg-alert/10">
-                <div className="font-medium">
-                  ⚠️{" "}
-                  {selectedCount === allStudentIds.length
-                    ? "3"
-                    : Math.min(3, selectedCount)}{" "}
-                  students struggling with Concept X
+              {alertStudents.length === 0 ? (
+                <div className="p-2 border border-border text-muted-foreground">
+                  No active alerts.
                 </div>
-                <div className="text-muted-foreground mt-1">
-                  {selectedCount === allStudentIds.length
-                    ? "Jordan, Casey, Avery"
-                    : "Selected students"}
-                </div>
-              </div>
-              <div className="p-2 border border-border">
-                <div className="font-medium">
-                  📊 Class pace slower than planned
-                </div>
-                <div className="text-muted-foreground mt-1">
-                  12 min behind schedule
-                </div>
-              </div>
-              <div className="p-2 border border-border">
-                <div className="font-medium">
-                  💡{" "}
-                  {selectedCount === allStudentIds.length
-                    ? "5"
-                    : Math.min(5, selectedCount)}{" "}
-                  students ready for enrichment
-                </div>
-                <div className="text-muted-foreground mt-1">
-                  Consider additional challenge
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-2 border-border p-3">
-            <h3 className="text-sm font-bold mb-3">Recent Events</h3>
-            <div className="space-y-2 text-xs">
-              {[
-                { time: "11:05", event: "Jordan requested help" },
-                { time: "11:03", event: "Morgan completed assessment" },
-                { time: "10:58", event: "Class entered discussion phase" },
-                { time: "10:55", event: "Casey engagement dropped" },
-              ].map((item, index) => (
-                <div key={index} className="flex gap-3">
-                  <span className="text-muted-foreground font-mono">
-                    {item.time}
-                  </span>
-                  <span>{item.event}</span>
-                </div>
-              ))}
+              ) : (
+                alertStudents.map((student) => (
+                  <div key={student.id} className="p-2 border border-alert bg-alert/10">
+                    <div className="font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-alert" />
+                      {student.name}
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {student.currentTask}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </TabsContent>
