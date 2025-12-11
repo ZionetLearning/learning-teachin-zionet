@@ -1,4 +1,4 @@
-{{- if or .Values.manager.ingress.enabled .Values.learningManager.ingress.enabled }}
+{{- if .Values.manager.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,24 +11,19 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
 spec:
   ingressClassName: "nginx"
+  {{- if .Values.manager.ingress.tls.enabled }}
   tls:
-    {{- if .Values.manager.ingress.enabled }}
     - hosts:
         - "{{ .Values.manager.ingress.host }}"
       secretName: "{{ .Values.manager.ingress.tls.secretName }}"
-    {{- end }}
-    {{- if .Values.learningManager.ingress.enabled }}
-    - hosts:
-        - "{{ .Values.learningManager.ingress.host }}"
-      secretName: "{{ .Values.learningManager.ingress.tls.secretName }}"
-    {{- end }}
+  {{- end }}
   rules:
-    {{- if .Values.manager.ingress.enabled }}
     - host: "{{ .Values.manager.ingress.host }}"
       http:
         paths:
@@ -45,33 +40,4 @@ spec:
                 port:
                   number: {{ .Values.manager.ports.service }}
                 {{- end }}
-          {{- if .Values.keda.enabled }}
-            metadata:
-              annotations:
-                nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
-          {{- end }}
-    {{- end }}
-    {{- if .Values.learningManager.ingress.enabled }}
-    - host: "{{ .Values.learningManager.ingress.host }}"
-      http:
-        paths:
-          - path: "{{ printf "%s/%s(/|$)(.*)" .Values.learningManager.ingress.basePath .Release.Namespace }}"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                {{- if .Values.keda.enabled }}
-                name: keda-interceptor-{{ include "app.namespace" . }}
-                port:
-                  number: 8080
-                {{- else }}
-                name: {{ .Values.learningManager.name }}
-                port:
-                  number: {{ .Values.learningManager.ports.service }}
-                {{- end }}
-          {{- if .Values.keda.enabled }}
-            metadata:
-              annotations:
-                nginx.ingress.kubernetes.io/upstream-vhost: teachin.api-learning.{{ include "app.namespace" . }}
-          {{- end }}
-    {{- end }}
 {{- end }}
