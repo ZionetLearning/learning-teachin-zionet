@@ -6,9 +6,12 @@ import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
 import ReorderIcon from "@mui/icons-material/Reorder";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import EmojiSymbolsIcon from "@mui/icons-material/EmojiSymbols";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 export const getAchievementIcon = (key: string): SvgIconComponent => {
+  const normalizedKey = key?.toLowerCase?.() ?? "";
+
   const icons: Record<string, SvgIconComponent> = {
     word_cards_first: EmojiEventsIcon,
     word_cards_3: StarsIcon,
@@ -31,5 +34,24 @@ export const getAchievementIcon = (key: string): SvgIconComponent => {
     challenge_5: EmojiSymbolsIcon,
   };
 
-  return icons[key] || EmojiEventsIcon;
+  if (icons[normalizedKey]) {
+    return icons[normalizedKey];
+  }
+
+  const featureIcons: Record<string, SvgIconComponent> = {
+    wordcards: EmojiEventsIcon,
+    typingpractice: KeyboardIcon,
+    speakingpractice: RecordVoiceOverIcon,
+    wordorder: ReorderIcon,
+    practicemistakes: ErrorOutlineIcon,
+    wordcardschallenge: EmojiSymbolsIcon,
+    gamepractice: SportsEsportsIcon,
+    games: SportsEsportsIcon,
+  };
+
+  if (featureIcons[normalizedKey]) {
+    return featureIcons[normalizedKey];
+  }
+
+  return EmojiEventsIcon;
 };
