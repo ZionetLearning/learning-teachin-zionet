@@ -5,7 +5,7 @@ export * from "./badge";
 export * from "./button";
 export * from "./card";
 export * from "./checkbox";
-export * from "./drill-in-panel";
+export * from "./detail-panel";
 export * from "./fab";
 export * from "./label";
 export * from "./radio-group";
