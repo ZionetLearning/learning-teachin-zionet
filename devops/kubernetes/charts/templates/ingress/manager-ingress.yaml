@@ -11,7 +11,6 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
@@ -46,6 +45,11 @@ spec:
                 port:
                   number: {{ .Values.manager.ports.service }}
                 {{- end }}
+          {{- if .Values.keda.enabled }}
+            metadata:
+              annotations:
+                nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
+          {{- end }}
     {{- end }}
     {{- if .Values.learningManager.ingress.enabled }}
     - host: "{{ .Values.learningManager.ingress.host }}"
@@ -64,5 +68,10 @@ spec:
                 port:
                   number: {{ .Values.learningManager.ports.service }}
                 {{- end }}
+          {{- if .Values.keda.enabled }}
+            metadata:
+              annotations:
+                nginx.ingress.kubernetes.io/upstream-vhost: teachin.api-learning.{{ include "app.namespace" . }}
+          {{- end }}
     {{- end }}
 {{- end }}
