@@ -39,6 +39,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{38BF54C6-C41A-4CC0-A892-846989AF271A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Setup-LocalAppSettings-from-azure.ps1 = Setup-LocalAppSettings-from-azure.ps1
+		Setup-LocalAppSettings-from-env.ps1 = Setup-LocalAppSettings-from-env.ps1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagerUnitTests", "UnitTests\ManagerUnitTests\ManagerUnitTests.csproj", "{19AD993F-5E86-40E6-89F7-F44BB10DD6DC}"
