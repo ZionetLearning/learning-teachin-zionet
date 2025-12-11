@@ -222,6 +222,22 @@ module "storage" {
   environment_name    = var.environment_name
 }
 
+# ------------- Key Vault for Dev Environment -----------------------
+module "keyvault_dev" {
+  source              = "./modules/keyvault"
+  key_vault_name      = "dev-teachin-kv-test"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+}
+
+# ------------- Key Vault for Local Environment -----------------------
+module "keyvault_local" {
+  source              = "./modules/keyvault"
+  key_vault_name      = "local-teachin-kv"
+  resource_group_name = "local-keyvault-rg"
+  location            = var.location
+}
+
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
 module "log_analytics" {
