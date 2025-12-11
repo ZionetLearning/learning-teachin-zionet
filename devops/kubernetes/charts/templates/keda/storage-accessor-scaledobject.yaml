@@ -1,4 +1,3 @@
-{{/*
 {{- if .Values.keda.enabled }}
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -7,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   scaleTargetRef:
-    name: {{ .Values.storage-accessor.name }}
+    name: {{ .Values.storageAccessor.name }}
   minReplicaCount: 0
   maxReplicaCount: 1
   pollingInterval: 5
@@ -18,4 +17,3 @@ spec:
         podSelector: 'io.kompose.service=learning-manager'
         value: "1"
 {{- end }}
-*/}}

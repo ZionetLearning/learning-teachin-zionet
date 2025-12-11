@@ -49,7 +49,7 @@ manager:
 
 learningManager:
   image:
-    name: learningManager  # Required: image name for the container
+    name: learnin-manager  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:
@@ -90,7 +90,7 @@ engine:
     BrevoMailing__Username: ""
     BrevoMailing__Password: ""
 
-ai-engine:
+aiEngine:
   image:
     name: ai-engine  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
@@ -104,14 +104,14 @@ accessor:
   env:
     ASPNETCORE_URLS: "http://+:5003"
 
-storage-accessor:
+storageAccessor:
   image:
     name: storage-accessor  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5006"
 
-database-accessor:
+databaseAccessor:
   image:
     name: database-accessor  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD

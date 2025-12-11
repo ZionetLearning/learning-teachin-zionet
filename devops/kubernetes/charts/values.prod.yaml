@@ -71,7 +71,7 @@ engine:
     Tavily__IncludeRawContent: "false"
     Tavily__SearchDepth: "basic"
 
-ai-engine:
+aiEngine:
   image:
     tag: "1.0.0"
   env:
@@ -84,13 +84,13 @@ accessor:
   env:
     ASPNETCORE_URLS: "http://+:5003"
 
-storage-accessor:
+storageAccessor:
   image:
     tag: "1.0.0"
   env:
     ASPNETCORE_URLS: "http://+:5006"
 
-database-accessor:
+databaseAccessor:
   image:
     tag: "1.0.0"
   env:

@@ -90,9 +90,9 @@ engine:
     BrevoMailing__Username: ""
     BrevoMailing__Password: ""
 
-ai-engine:
+aiEngine:
   image:
-    name: ai-engine # Required: image name for the container
+    name: aiEngine # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5005"
@@ -104,16 +104,16 @@ accessor:
   env:
     ASPNETCORE_URLS: "http://+:5003"
 
-storage-accessor:
+storageAccessor:
   image:
-    name: storage-accessor # Required: image name for the container
+    name: storageAccessor # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5006"
 
-database-accessor:
+databaseAccessor:
   image:
-    name: database-accessor # Required: image name for the container
+    name: databaseAccessor # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5007"

@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.storage-accessor.name }}
+  name: {{ .Values.storageAccessor.name }}
   namespace: {{ include "app.namespace" . }}
   labels:
-    {{ .Values.storage-accessor.labels.selectorKey }}: {{ .Values.storage-accessor.labels.selectorValue }}
+    {{ .Values.storageAccessor.labels.selectorKey }}: {{ .Values.storageAccessor.labels.selectorValue }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{ .Values.storage-accessor.labels.selectorKey }}: {{ .Values.storage-accessor.labels.selectorValue }}
+      {{ .Values.storageAccessor.labels.selectorKey }}: {{ .Values.storageAccessor.labels.selectorValue }}
   template:
     metadata:
       labels:
-        {{ .Values.storage-accessor.labels.selectorKey }}: {{ .Values.storage-accessor.labels.selectorValue }}
+        {{ .Values.storageAccessor.labels.selectorKey }}: {{ .Values.storageAccessor.labels.selectorValue }}
       annotations:
         {{ include "app.dapr.annotations" (dict
               "enabled" .Values.global.dapr.enabled
-              "appId"   (.Values.storage-accessor.dapr.appId | default .Values.storage-accessor.name)
-              "appPort" .Values.storage-accessor.dapr.appPort
+              "appId"   (.Values.storageAccessor.dapr.appId | default .Values.storageAccessor.name)
+              "appPort" .Values.storageAccessor.dapr.appPort
               "config"  (.Values.global.dapr.configName | default "dapr-config")
           ) | nindent 8 }}
         dapr.io/sidecar-cpu-request:  "{{ .Values.global.dapr.sidecar.requests.cpu }}"
@@ -33,27 +33,27 @@ spec:
       {{- include "app.spot.affinity" . | nindent 6 }}
       {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
-        - name: {{ .Values.storage-accessor.name }}
-          image: {{ include "app.image" (dict "name" .Values.storage-accessor.image.name "tag" .Values.storage-accessor.image.tag "Values" .Values) }}
+        - name: {{ .Values.storageAccessor.name }}
+          image: {{ include "app.image" (dict "name" .Values.storageAccessor.image.name "tag" .Values.storageAccessor.image.tag "Values" .Values) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
-            - containerPort: {{ .Values.storage-accessor.ports.container }}
+            - containerPort: {{ .Values.storageAccessor.ports.container }}
               protocol: TCP
           env:
             - name: ASPNETCORE_URLS
-              value: "{{ .Values.storage-accessor.env.ASPNETCORE_URLS }}"
+              value: "{{ .Values.storageAccessor.env.ASPNETCORE_URLS }}"
           resources:
-            {{- toYaml .Values.storage-accessor.resources | nindent 12 }}
+            {{- toYaml .Values.storageAccessor.resources | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.storage-accessor.name }}
+  name: {{ .Values.storageAccessor.name }}
   namespace: {{ include "app.namespace" . }}
 spec:
-  type: {{ .Values.storage-accessor.service.type }}
+  type: {{ .Values.storageAccessor.service.type }}
   selector:
-    {{ .Values.storage-accessor.labels.selectorKey }}: {{ .Values.storage-accessor.labels.selectorValue }}
+    {{ .Values.storageAccessor.labels.selectorKey }}: {{ .Values.storageAccessor.labels.selectorValue }}
   ports:
-    - port: {{ .Values.storage-accessor.ports.service }}
-      targetPort: {{ .Values.storage-accessor.ports.container }}
+    - port: {{ .Values.storageAccessor.ports.service }}
+      targetPort: {{ .Values.storageAccessor.ports.container }}

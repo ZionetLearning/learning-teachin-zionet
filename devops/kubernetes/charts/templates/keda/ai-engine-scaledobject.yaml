@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   scaleTargetRef:
-    name: {{ .Values.ai-engine.name }}
+    name: {{ .Values.aiEngine.name }}
   minReplicaCount: 0
   maxReplicaCount: 1
   pollingInterval: 5 

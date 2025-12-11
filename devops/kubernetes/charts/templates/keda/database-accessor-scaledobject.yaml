@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   scaleTargetRef:
-    name: {{ .Values.database-accessor.name }}
+    name: {{ .Values.databaseAccessor.name }}
   minReplicaCount: 0
   maxReplicaCount: 1
   pollingInterval: 5

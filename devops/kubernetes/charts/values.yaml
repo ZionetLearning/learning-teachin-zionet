@@ -136,7 +136,7 @@ manager:
       memory: "512Mi"
 
 learningManager:
-  name: learningManager
+  name: learning-manager
   labels:
     selectorKey: io.kompose.service
     selectorValue: learning-manager
@@ -240,7 +240,7 @@ engine:
       cpu: "500m"
       memory: "512Mi"
 
-ai-engine:
+aiEngine:
   name: ai-engine
   labels:
     selectorKey: io.kompose.service
@@ -318,7 +318,7 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
-storage-accessor:
+storageAccessor:
   name: storage-accessor
   labels:
     selectorKey: app
