@@ -4,12 +4,12 @@ import { X } from "lucide-react";
 import { Button } from "@ui-shadcn-components";
 import { cn } from "@ui-shadcn-components/utils";
 
-export interface DetailPanelProps {
+export interface SideDetailPanelProps {
   children: ReactNode;
   className?: string;
 }
 
-export interface DetailPanelHeaderProps {
+export interface SideDetailPanelHeaderProps {
   title: string;
   description?: string;
   onClose?: () => void;
@@ -22,8 +22,8 @@ export interface DetailPanelHeaderProps {
  *
  * @example
  * ```tsx
- * <DetailPanel>
- *   <DetailPanel.Header
+ * <SideDetailPanel>
+ *   <SideDetailPanel.Header
  *     title="Control Panel"
  *     description="Manage students and lessons"
  *     onClose={handleClose}
@@ -36,10 +36,10 @@ export interface DetailPanelHeaderProps {
  *       <YourCustomContent />
  *     </TabsContent>
  *   </Tabs>
- * </DetailPanel>
+ * </SideDetailPanel>
  * ```
  */
-export const DetailPanel = ({ children, className }: DetailPanelProps) => {
+export const SideDetailPanel = ({ children, className }: SideDetailPanelProps) => {
   return (
     <div
       className={cn(
@@ -53,13 +53,13 @@ export const DetailPanel = ({ children, className }: DetailPanelProps) => {
 };
 
 /**
- * Header component for DetailPanel with title, optional description, and close button.
+ * Header component for SideDetailPanel with title, optional description, and close button.
  */
-export const DetailPanelHeader = ({
+export const SideDetailPanelHeader = ({
   title,
   description,
   onClose,
-}: DetailPanelHeaderProps) => {
+}: SideDetailPanelHeaderProps) => {
   return (
     <div className="sticky top-0 bg-card border-b-2 border-border p-4 z-10">
       <div className="flex items-center justify-between mb-2">
@@ -83,4 +83,4 @@ export const DetailPanelHeader = ({
   );
 };
 
-DetailPanel.Header = DetailPanelHeader;
+SideDetailPanel.Header = SideDetailPanelHeader;
