@@ -10,9 +10,11 @@ export const cn = (...inputs: ClassValue[]) => {
 };
 
 const MOBILE_BREAKPOINT = 768;
+const getIsMobile = () =>
+  typeof window === "undefined" ? false : window.innerWidth < MOBILE_BREAKPOINT;
 
 export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = useState<boolean>(getIsMobile);
 
   useEffect(function handleMatchMedia() {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -22,5 +24,5 @@ export const useIsMobile = () => {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 };

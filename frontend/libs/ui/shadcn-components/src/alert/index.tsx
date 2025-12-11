@@ -27,7 +27,7 @@ const Alert = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & AlertV
 );
 Alert.displayName = "Alert";
 
-const AlertTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHeadingElement>>(
+const AlertTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
     <h5
       ref={ref}

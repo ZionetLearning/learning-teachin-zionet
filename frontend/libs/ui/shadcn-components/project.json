@@ -43,26 +43,6 @@
           }
         ]
       }
-    },
-    "test": {
-      "executor": "@nx/vite:test",
-      "options": {
-        "passWithNoTests": true
-        
-      }
-    },
-    "storybook": {
-      "executor": "@nx/storybook:storybook",
-      "options": {
-        "configDir": "libs/ui/shadcn-components/.storybook",
-        "port": 4600
-      },
-      "configurations": {
-        "ci": {
-          "quiet": true
-        },
-        "development": {}
-      }
     }
   }
 }
