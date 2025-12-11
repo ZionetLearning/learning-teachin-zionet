@@ -1,9 +1,7 @@
 import { AlertTriangle, User } from "lucide-react";
 
-import { Badge } from "@ui-shadcn-components/badge";
-import { Card } from "@ui-shadcn-components/card";
-import { Checkbox } from "@ui-shadcn-components/checkbox";
 import { cn } from "@ui-shadcn-components/utils";
+import { Badge, Card, Checkbox } from "@ui-shadcn-components/common";
 
 type EngagementLevel = "high" | "medium" | "low";
 type PersonalizationMode = "Auto" | "Override";
@@ -74,30 +72,52 @@ export const StudentCard = ({
             </span>
           </button>
 
-          {hasAlert && <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />}
+          {hasAlert && (
+            <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          )}
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-2">
-            <span className="text-xs leading-4 text-muted-foreground">Progress</span>
-            <span className="text-xs leading-4 text-muted-foreground whitespace-nowrap">{progress}%</span>
+            <span className="text-xs leading-4 text-muted-foreground">
+              Progress
+            </span>
+            <span className="text-xs leading-4 text-muted-foreground whitespace-nowrap">
+              {progress}%
+            </span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-primary transition-all rounded-full" style={{ width: `${progress}%` }} />
+            <div
+              className="h-full bg-primary transition-all rounded-full"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-2" aria-label={`Engagement level: ${engagement}`}>
+        <div
+          className="flex items-center gap-2"
+          aria-label={`Engagement level: ${engagement}`}
+        >
           <div className="flex gap-px items-center h-3">
             {[0, 1, 2, 3, 4].map((value) => (
-              <div key={value} className={cn("h-[10px] w-[4px] rounded-[1px]", engagementBarColor[engagement])} />
+              <div
+                key={value}
+                className={cn(
+                  "h-[10px] w-[4px] rounded-[1px]",
+                  engagementBarColor[engagement],
+                )}
+              />
             ))}
           </div>
-          <span className="text-xs leading-4 text-muted-foreground capitalize">{engagement} engagement</span>
+          <span className="text-xs leading-4 text-muted-foreground capitalize">
+            {engagement} engagement
+          </span>
         </div>
 
         <div className="border-l-2 border-border pl-2.5">
-          <span className="text-xs leading-4 text-muted-foreground whitespace-pre-wrap">{currentTask}</span>
+          <span className="text-xs leading-4 text-muted-foreground whitespace-pre-wrap">
+            {currentTask}
+          </span>
         </div>
 
         <Badge
@@ -110,4 +130,3 @@ export const StudentCard = ({
     </div>
   </Card>
 );
-

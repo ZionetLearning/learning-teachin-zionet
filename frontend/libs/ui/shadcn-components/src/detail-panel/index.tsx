@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { X } from "lucide-react";
 
-import { Button } from "@ui-shadcn-components/button";
+import { Button } from "@ui-shadcn-components";
 import { cn } from "@ui-shadcn-components/utils";
 
 export interface DetailPanelProps {
@@ -17,13 +17,13 @@ export interface DetailPanelHeaderProps {
 
 /**
  * A side panel component container for displaying detailed information with composable content.
- * 
+ *
  * Originally named `DrillInPanel` in the i-teach classroom-flow-demo repository.
- * 
+ *
  * @example
  * ```tsx
  * <DetailPanel>
- *   <DetailPanel.Header 
+ *   <DetailPanel.Header
  *     title="Control Panel"
  *     description="Manage students and lessons"
  *     onClose={handleClose}
