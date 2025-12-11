@@ -39,7 +39,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{38BF54C6-C41A-4CC0-A892-846989AF271A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		.env = .env
 		Setup-LocalAppSettings-from-azure.ps1 = Setup-LocalAppSettings-from-azure.ps1
 		Setup-LocalAppSettings-from-env.ps1 = Setup-LocalAppSettings-from-env.ps1
 	EndProjectSection
