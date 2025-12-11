@@ -47,9 +47,9 @@ manager:
       clusterIssuer: letsencrypt-prod
       secretName: teachin-tls
 
-learning-manager:
+learningManager:
   image:
-    name: learning-manager  # Required: image name for the container
+    name: learningManager  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:

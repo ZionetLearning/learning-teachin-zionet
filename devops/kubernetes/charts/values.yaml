@@ -135,8 +135,8 @@ manager:
       cpu: "500m"
       memory: "512Mi"
 
-learning-manager:
-  name: learning-manager
+learningManager:
+  name: learningManager
   labels:
     selectorKey: io.kompose.service
     selectorValue: learning-manager

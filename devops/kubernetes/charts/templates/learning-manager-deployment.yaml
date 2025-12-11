@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.learning-manager.name }}
+  name: {{ .Values.learningManager.name }}
   namespace: {{ include "app.namespace" . }}
   labels:
-    {{ .Values.learning-manager.labels.selectorKey }}: {{ .Values.learning-manager.labels.selectorValue }}
+    {{ .Values.learningManager.labels.selectorKey }}: {{ .Values.learningManager.labels.selectorValue }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{ .Values.learning-manager.labels.selectorKey }}: {{ .Values.learning-manager.labels.selectorValue }}
+      {{ .Values.learningManager.labels.selectorKey }}: {{ .Values.learningManager.labels.selectorValue }}
   template:
     metadata:
       labels:
-        {{ .Values.learning-manager.labels.selectorKey }}: {{ .Values.learning-manager.labels.selectorValue }}
+        {{ .Values.learningManager.labels.selectorKey }}: {{ .Values.learningManager.labels.selectorValue }}
       annotations:
         {{ include "app.dapr.annotations" (dict
             "enabled" .Values.global.dapr.enabled
-            "appId" (.Values.learning-manager.dapr.appId | default .Values.learning-manager.name)
-            "appPort" .Values.learning-manager.dapr.appPort
+            "appId" (.Values.learningManager.dapr.appId | default .Values.learningManager.name)
+            "appPort" .Values.learningManager.dapr.appPort
             "config"  (.Values.global.dapr.configName | default "dapr-config")
         ) | nindent 8 }}
         dapr.io/sidecar-cpu-request:  "{{ .Values.global.dapr.sidecar.requests.cpu }}"
@@ -33,27 +33,27 @@ spec:
       {{- include "app.spot.affinity" . | nindent 6 }}
       {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
-        - name: {{ .Values.learning-manager.name }}
-          image: {{ include "app.image" (dict "name" .Values.learning-manager.image.name "tag" .Values.learning-manager.image.tag "Values" .Values) }}
+        - name: {{ .Values.learningManager.name }}
+          image: {{ include "app.image" (dict "name" .Values.learningManager.image.name "tag" .Values.learningManager.image.tag "Values" .Values) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
-            - containerPort: {{ .Values.learning-manager.ports.container }}
+            - containerPort: {{ .Values.learningManager.ports.container }}
               protocol: TCP
           env:
             - name: ASPNETCORE_URLS
-              value: "{{ .Values.learning-manager.env.ASPNETCORE_URLS }}"
+              value: "{{ .Values.learningManager.env.ASPNETCORE_URLS }}"
           resources:
-            {{- toYaml .Values.learning-manager.resources | nindent 12 }}
+            {{- toYaml .Values.learningManager.resources | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.learning-manager.name }}
+  name: {{ .Values.learningManager.name }}
   namespace: {{ include "app.namespace" . }}
 spec:
-  type: {{ .Values.learning-manager.service.type }}
+  type: {{ .Values.learningManager.service.type }}
   selector:
-    {{ .Values.learning-manager.labels.selectorKey }}: {{ .Values.learning-manager.labels.selectorValue }}
+    {{ .Values.learningManager.labels.selectorKey }}: {{ .Values.learningManager.labels.selectorValue }}
   ports:
-    - port: {{ .Values.learning-manager.ports.service }}
-      targetPort: {{ .Values.learning-manager.ports.container }}
+    - port: {{ .Values.learningManager.ports.service }}
+      targetPort: {{ .Values.learningManager.ports.container }}

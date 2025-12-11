@@ -8,9 +8,9 @@ spec:
   hosts:
     - teachin.api.{{ include "app.namespace" . }}
   scaleTargetRef:
-    name: {{ .Values.learning-manager.name }}
-    service: {{ .Values.learning-manager.name }}
-    port: {{ .Values.learning-manager.ports.service }}
+    name: {{ .Values.learningManager.name }}
+    service: {{ .Values.learningManager.name }}
+    port: {{ .Values.learningManager.ports.service }}
   replicas:
     min: 0
     max: 1

@@ -12,22 +12,22 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
-    {{- if and .Values.learning-manager.ingress.tls.enabled .Values.learning-manager.ingress.tls.clusterIssuer }}
+    {{- if and .Values.learningManager.ingress.tls.enabled .Values.learningManager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
 spec:
   ingressClassName: "nginx"
-  {{- if .Values.learning-manager.ingress.tls.enabled }}
+  {{- if .Values.learningManager.ingress.tls.enabled }}
   tls:
     - hosts:
-        - "{{ .Values.learning-manager.ingress.host }}"
-      secretName: "{{ .Values.learning-manager.ingress.tls.secretName }}"
+        - "{{ .Values.learningManager.ingress.host }}"
+      secretName: "{{ .Values.learningManager.ingress.tls.secretName }}"
   {{- end }}
   rules:
-    - host: "{{ .Values.learning-manager.ingress.host }}"
+    - host: "{{ .Values.learningManager.ingress.host }}"
       http:
         paths:
-          - path: "{{ printf "%s/%s(/|$)(.*)" .Values.learning-manager.ingress.basePath .Release.Namespace }}"
+          - path: "{{ printf "%s/%s(/|$)(.*)" .Values.learningManager.ingress.basePath .Release.Namespace }}"
             pathType: ImplementationSpecific
             backend:
               service:
@@ -36,8 +36,8 @@ spec:
                 port:
                   number: 8080
                 {{- else }}
-                name: {{ .Values.learning-manager.name }}
+                name: {{ .Values.learningManager.name }}
                 port:
-                  number: {{ .Values.learning-manager.ports.service }}
+                  number: {{ .Values.learningManager.ports.service }}
                 {{- end }}
 {{- end }}
