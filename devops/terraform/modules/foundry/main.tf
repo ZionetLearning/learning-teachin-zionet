@@ -13,7 +13,7 @@ resource "azurerm_cognitive_account" "foundry" {
   sku_name            = "S0"
 
   # Disable local auth to use Entra ID authentication
-  local_auth_enabled = false
+  local_auth_enabled = true
 
   # Custom subdomain for DNS names
   custom_subdomain_name = var.foundry_name
