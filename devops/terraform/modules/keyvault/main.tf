@@ -73,3 +73,51 @@ resource "azurerm_key_vault_access_policy" "current_user" {
     "Update"
   ]
 }
+
+# Access policy for your personal user (manual override)
+resource "azurerm_key_vault_access_policy" "personal_user" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = "40b32606-01be-4846-8d19-b44bc99f961e"  # Your personal user ID
+
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set",
+    "Delete",
+    "Recover",
+    "Backup",
+    "Restore",
+    "Purge"
+  ]
+
+  key_permissions = [
+    "Get",
+    "List",
+    "Create",
+    "Delete",
+    "Recover",
+    "Backup", 
+    "Restore",
+    "Purge",
+    "Decrypt",
+    "Encrypt",
+    "Sign",
+    "Verify",
+    "WrapKey",
+    "UnwrapKey"
+  ]
+
+  certificate_permissions = [
+    "Get",
+    "List",
+    "Create",
+    "Delete",
+    "Recover",
+    "Backup",
+    "Restore", 
+    "Purge",
+    "Import",
+    "Update"
+  ]
+}
