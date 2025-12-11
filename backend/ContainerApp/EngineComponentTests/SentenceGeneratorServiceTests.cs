@@ -1,39 +1,56 @@
-﻿using DotQueue;
-using Engine;
+﻿using Azure.AI.OpenAI;
+using Engine.Constants.Chat;
+using Engine.Models;
+using Engine.Models.Prompts;
 using Engine.Models.Sentences;
 using Engine.Services;
-using Microsoft.Extensions.Logging;
+using Engine.Services.Clients.AccessorClient;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.SemanticKernel;
-using Polly;
+using Microsoft.Extensions.Options;
+using Moq;
+using OpenAI.Chat;
 
 namespace EngineComponentTests;
 
-[Collection("Plugins collection")]
+// Todo: fix all tests
+
 public class SentenceGeneratorServiceTests
 {
-    private readonly TestKernelPluginFix _fx;
+    private readonly Mock<AzureOpenAIClient> _azureClientMock;
+    private readonly Mock<ChatClient> _chatClientMock;
+    private readonly Mock<IAccessorClient> _accessorMock;
     private readonly SentencesService _sentenceService;
-    private sealed class FakeRetryPolicyProvider : IRetryPolicy
+
+    public SentenceGeneratorServiceTests()
     {
-        private static readonly IAsyncPolicy _noOp = Policy.NoOpAsync();
-        private static readonly IAsyncPolicy<ChatMessageContent> _noOpKernel =
-            Policy.NoOpAsync<ChatMessageContent>();
+        var settings = new AzureOpenAiSettings
+        {
+            DeploymentName = "gpt-4o",
+            Endpoint = "https://test.openai.azure.com",
+            ApiKey = "test-key"
+        };
+        var optionsMock = Options.Create(settings);
 
-        public IAsyncPolicy Create(QueueSettings settings, ILogger logger) => _noOp;
+        _accessorMock = new Mock<IAccessorClient>();
+        _accessorMock
+            .Setup(x => x.GetPromptAsync(PromptsKeys.SentencesGenerateTemplate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PromptResponse
+            {
+                PromptKey = PromptsKeys.SentencesGenerateTemplate.Key,
+                Content = "You are a sentence generator..."
+            });
 
-        public IAsyncPolicy<HttpResponseMessage> CreateHttpPolicy(ILogger logger) =>
-            Policy.NoOpAsync<HttpResponseMessage>();
+        _azureClientMock = new Mock<AzureOpenAIClient>();
+        _chatClientMock = new Mock<ChatClient>();
 
-        public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger) =>
-            _noOpKernel;
-    }
+        _azureClientMock
+            .Setup(x => x.GetChatClient(settings.DeploymentName))
+            .Returns(_chatClientMock.Object);
 
-    public SentenceGeneratorServiceTests(TestKernelPluginFix fx)
-    {
-        _fx = fx;
         _sentenceService = new SentencesService(
-            _fx.Kernel,
+            _azureClientMock.Object,
+            optionsMock,
+            _accessorMock.Object,
             NullLogger<SentencesService>.Instance);
     }
 
@@ -73,7 +90,4 @@ public class SentenceGeneratorServiceTests
 
         Assert.Equal(count, res.Sentences.Count);
     }
-
-    [CollectionDefinition("Plugins collection")]
-    public class KernelCollection : ICollectionFixture<TestKernelPluginFix> { }
 }

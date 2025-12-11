@@ -1,5 +1,6 @@
 ﻿
 using System.Text.Json;
+using Engine.Models.Games;
 
 namespace Engine.Models.Chat;
 
@@ -22,4 +23,6 @@ public sealed record EngineChatRequest
     public UserDetailForChat? UserDetail { get; init; }
 
     public JsonElement? PageContext { get; init; }
+    public Guid? AttemptId { get; init; }
+    public GameName? GameType { get; init; }
 }

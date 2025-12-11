@@ -8,8 +8,8 @@ public record ChatAiServiceResponse
     public required string RequestId { get; init; }
     public required Guid ThreadId { get; init; }
     public ChatMessage? Answer { get; set; }
-
     public ChatHistory UpdatedHistory { get; set; } = new ChatHistory();
+    public string? ThreadStoreJson { get; set; }
     public ChatAnswerStatus Status { get; set; } = ChatAnswerStatus.Ok;
     public string? Error { get; set; }
 }

@@ -18,7 +18,9 @@ public static class PromptsKeys
     public static PromptConfiguration GlobalChatPageContext { get; private set; } = new() { Key = "chat.global.page.context", Label = PromptLabels.Production };
     public static PromptConfiguration MistakeUserTemplate { get; private set; } = new() { Key = "prompts.mistake.user.template", Label = PromptLabels.Production };
     public static PromptConfiguration MistakeRuleTemplate { get; private set; } = new() { Key = "prompts.mistake.rule.template", Label = PromptLabels.Production };
+    public static PromptConfiguration SentencesGenerateTemplate { get; private set; } = new() { Key = "prompts.sentences.generate.template", Label = PromptLabels.Production };
     public static PromptConfiguration EmailDraftTemplate { get; private set; } = new() { Key = "prompts.email.template", Label = PromptLabels.Production };
+    public static PromptConfiguration WordExplanationTemplate { get; private set; } = new() { Key = "prompts.word.explain.template", Label = PromptLabels.Production };
 
     public static void Configure(PromptKeyOptions? options)
     {
@@ -75,6 +77,16 @@ public static class PromptsKeys
         if (options.EmailDraftTemplate is not null)
         {
             EmailDraftTemplate = options.EmailDraftTemplate;
+        }
+
+        if (options.SentencesGenerateTemplate is not null)
+        {
+            SentencesGenerateTemplate = options.SentencesGenerateTemplate;
+        }
+
+        if (options.WordExplanationTemplate is not null)
+        {
+            WordExplanationTemplate = options.WordExplanationTemplate;
         }
     }
 }

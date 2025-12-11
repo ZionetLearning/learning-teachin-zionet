@@ -56,7 +56,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         {
             _logger.LogWarning("History snapshot for thread {ThreadId} not found, returning empty", threadId);
 
-            using var doc = JsonDocument.Parse("""{"messages":[]}""");
+            using var doc = JsonDocument.Parse("null");
             return new HistorySnapshotDto
             {
                 ThreadId = threadId,

@@ -12,4 +12,6 @@ public sealed class PromptKeyOptions
     public PromptConfiguration? MistakeUserTemplate { get; set; }
     public PromptConfiguration? MistakeRuleTemplate { get; set; }
     public PromptConfiguration? EmailDraftTemplate { get; set; }
+    public PromptConfiguration? SentencesGenerateTemplate { get; set; }
+    public PromptConfiguration? WordExplanationTemplate { get; set; }
 }

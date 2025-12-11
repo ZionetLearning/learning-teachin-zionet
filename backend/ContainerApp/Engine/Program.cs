@@ -1,18 +1,21 @@
+using Azure;
+using Azure.AI.OpenAI;
 using Azure.Messaging.ServiceBus;
+using DotQueue;
+using Engine;
 using Engine.Constants;
+using Engine.Constants.Chat;
 using Engine.Endpoints;
 using Engine.Models;
-using Engine.Plugins;
+using Engine.Models.QueueMessages;
+using Engine.Options;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
+using Engine.Tools;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using DotQueue;
-using Engine;
-using Engine.Models.QueueMessages;
-using Engine.Options;
-using Engine.Constants.Chat;
 using Engine.Models.Emails;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,12 +44,10 @@ builder.Services.AddScoped<ISentencesService, SentencesService>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
-builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
 
 builder.Services
     .AddOptions<TavilySettings>()
@@ -79,32 +80,53 @@ builder.Services.AddSingleton(sp =>
 {
     var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
 
+    return new AzureOpenAIClient(
+        new Uri(cfg.Endpoint),
+        new AzureKeyCredential(cfg.ApiKey));
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
+    //delete after migration
     var kernel = Kernel.CreateBuilder()
                  .AddAzureOpenAIChatCompletion(
                      deploymentName: cfg.DeploymentName,
                      endpoint: cfg.Endpoint,
                      apiKey: cfg.ApiKey)
                  .Build();
-    var logger = sp.GetRequiredService<ILoggerFactory>()
-    .CreateLogger("KernelPluginRegistration");
-    foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
-    {
-        try
-        {
-            var pluginName = plugin.GetType().ToPluginName();
-            kernel.Plugins.AddFromObject(plugin, pluginName);
-            logger.LogInformation("Plugin {Name} registered.", pluginName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to register plugin {PluginType}", plugin.GetType().FullName);
-
-        }
-    }
+    var logger = sp.GetRequiredService<ILoggerFactory>();
 
     return kernel;
 
+});
+
+builder.Services.AddSingleton<TimeTools>();
+builder.Services.AddSingleton<WebSearchTool>();
+
+builder.Services.AddSingleton<IList<AITool>>(sp =>
+{
+    var time = sp.GetRequiredService<TimeTools>();
+    var search = sp.GetRequiredService<WebSearchTool>();
+
+    var getCurrentTimeTool = AIFunctionFactory.Create(
+        time.GetCurrentTime,
+        new AIFunctionFactoryOptions
+        {
+            Name = "get_current_time",
+            Description = "Returns the current time in ISO-8601 (UTC)."
+        });
+
+    var searchWebTool = AIFunctionFactory.Create(
+        search.SearchWebAsync,
+        new AIFunctionFactoryOptions
+        {
+            Name = "search_web",
+            Description = "Searches the web for current information, news, facts, or any topic."
+        });
+
+    return new List<AITool> { getCurrentTimeTool, searchWebTool };
 });
 
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>

@@ -24,12 +24,14 @@ public static class ChatsEndpoints
         return app;
     }
 
+    // Accessor/Endpoints/ChatsEndpoints.cs (фрагмент UpsertHistorySnapshotAsync)
     private static async Task<IResult> UpsertHistorySnapshotAsync(
         [FromBody] UpsertHistoryRequest body,
         [FromServices] IChatService chatService,
         [FromServices] ILogger<ChatService> logger)
     {
-        using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(UpsertHistorySnapshotAsync), body.ThreadId);
+        using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}",
+            nameof(UpsertHistorySnapshotAsync), body.ThreadId);
 
         try
         {
@@ -40,13 +42,13 @@ public static class ChatsEndpoints
 
             if (body.UserId == Guid.Empty)
             {
-                return Results.BadRequest(new { error = "UserId is required." });
+                return Results.BadRequest(new { error = "UserId is required and must be a GUID." });
             }
 
-            if (body.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
-            {
-                return Results.BadRequest(new { error = "history (raw SK ChatHistory) is required." });
-            }
+            var rawHistory =
+                body.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
+                    ? "null"
+                    : body.History.GetRawText();
 
             var existing = await chatService.GetHistorySnapshotAsync(body.ThreadId);
 
@@ -54,22 +56,27 @@ public static class ChatsEndpoints
             {
                 ThreadId = body.ThreadId,
                 UserId = body.UserId,
-                ChatType = body.ChatType ?? "default",
-                Name = body.Name,
-                History = body.History.GetRawText(),
+                ChatType = string.IsNullOrWhiteSpace(body.ChatType) ? "default" : body.ChatType!,
+                Name = string.IsNullOrWhiteSpace(body.Name) ? (existing?.Name ?? "New chat") : body.Name!,
+                History = rawHistory,
                 CreatedAt = existing?.CreatedAt ?? DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
 
             await chatService.UpsertHistorySnapshotAsync(snapshot);
 
-            var historyForResponse = body.History.Clone();
+            JsonElement historyForResponse;
+            using (var doc = JsonDocument.Parse(rawHistory))
+            {
+                historyForResponse = doc.RootElement.Clone();
+            }
 
             var payload = new
             {
                 threadId = snapshot.ThreadId,
                 snapshot.UserId,
                 snapshot.ChatType,
+                snapshot.Name,
                 history = historyForResponse
             };
 
@@ -85,10 +92,10 @@ public static class ChatsEndpoints
     }
 
     private static async Task<IResult> GetHistorySnapshotAsync(
-        Guid threadId,
-        Guid userId,
-        [FromServices] IChatService chatService,
-        [FromServices] ILogger<ChatService> logger)
+    Guid threadId,
+    Guid userId,
+    [FromServices] IChatService chatService,
+    [FromServices] ILogger<ChatService> logger)
     {
         using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(GetHistorySnapshotAsync), threadId);
 
@@ -102,27 +109,24 @@ public static class ChatsEndpoints
                     ThreadId = threadId,
                     UserId = userId,
                     Name = "New chat",
-                    History = """{"messages":[]}""",
                     ChatType = "default",
+                    History = "null",
                     CreatedAt = DateTimeOffset.UtcNow,
                     UpdatedAt = DateTimeOffset.UtcNow
                 };
                 await chatService.CreateChatAsync(snapshot);
                 logger.LogInformation("Created new chat {ChatId}", threadId);
-
-                using var empty = JsonDocument.Parse("""{"messages":[]}""");
-                var historyEmpty = empty.RootElement.Clone();
-                return Results.Ok(new { threadId, userId = userId, Name = snapshot.Name, chatType = (string?)null, history = historyEmpty });
             }
-
-            if (snapshot.UserId != userId)
+            else if (snapshot.UserId != userId)
             {
-                logger.LogError("Error accessing chat history chatID:{ChatId}, req user:{UserId}, owner:{Owner}", threadId, userId, snapshot.UserId);
-                // Optional: return Results.Forbid();
+                logger.LogWarning("User {UserId} requested thread {ThreadId} owned by {OwnerId}",
+                    userId, threadId, snapshot.UserId);
+                return Results.Forbid();
+
             }
 
             JsonElement historySafe;
-            using (var doc = JsonDocument.Parse(snapshot.History))
+            using (var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(snapshot.History) ? "null" : snapshot.History))
             {
                 historySafe = doc.RootElement.Clone();
             }
