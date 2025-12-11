@@ -75,7 +75,7 @@ non-production environment before merge.
 
 ## Architecture & Boundaries
 
-The backend MUST remain a .NET 9, Dapr-based system organized around
+The backend MUST remain a .NET 10, Dapr-based system organized around
 three service roles (Manager, Engine, Accessor) for the learning
 platform, serving Students, Teachers, and Admins with clearly scoped
 access. There MAY be multiple services in each role (e.g., several
@@ -83,34 +83,35 @@ Managers, Engines, or Accessors), but all MUST follow the same
 boundaries and communication rules.
 
 - Manager services are the only entrypoints for frontend clients and
-	SignalR connections; they own authentication, authorization, role-based
-	access enforcement, and orchestration of cross-service flows.
+  SignalR connections; they own authentication, authorization, role-based
+  access enforcement, and orchestration of cross-service flows.
 - Engine services handle compute-heavy and AI-related processing and
-	MUST NOT access the database directly except via Accessor services.
+  MUST NOT access the database directly except via Accessor services.
 - Accessor services own all data access (PostgreSQL via EF Core) and
-	external systems (e.g., email) and MUST expose operations only via
-	their public contracts.
+  external systems (e.g., email) and MUST expose operations only via
+  their public contracts.
 - New capabilities MUST first ask: "Which service role owns this
-	concern?" and place code accordingly.
+  concern?" and place code accordingly.
 
 Service-to-service call rules:
 
 - Accessor → Accessor: NOT allowed. Accessors MUST NOT depend on or
-	invoke other Accessors directly.
+  invoke other Accessors directly.
 - Engine → Manager/Engine: NOT allowed. Engines MUST NOT call Manager
-	or other Engine services.
+  or other Engine services.
 - Engine → Accessor: Allowed only when truly necessary (e.g., long-
-	running or AI workflows that need data access). Prefer Manager-
-	orchestrated flows when feasible.
+  running or AI workflows that need data access). Prefer Manager-
+  orchestrated flows when feasible.
 - Manager → Manager/Engine/Accessor: Allowed. Managers orchestrate
-	flows and MAY call other Managers, Engines, and Accessors using
-	approved communication mechanisms (Dapr, queues).
+  flows and MAY call other Managers, Engines, and Accessors using
+  approved communication mechanisms (Dapr, queues).
 
 Any proposal to introduce a new service type or bypass these
 boundaries MUST include a written rationale and an explicit governance-
 approved architecture update.
 
 ## Workflow & Quality
+
 Code reviews MUST verify:
 
 - Service boundaries and communication rules are respected.
@@ -120,8 +121,9 @@ Code reviews MUST verify:
 Changes that break public contracts (Manager HTTP endpoints, Accessor /
 Engine DTOs, queue message shapes) MUST document migration impact in
 the PR description and update affected tests.d communication patterns.
+
 - Tasks (`tasks.md`) SHOULD group work by user story
-	for critical paths (auth, role checks, async flows) before endpoint implementation.
+  for critical paths (auth, role checks, async flows) before endpoint implementation.
 
 Code reviews MUST verify:
 
@@ -139,9 +141,9 @@ rules for the TeachIn backend. All contributors and reviewers are
 responsible for enforcing it.
 
 - Amendments: Any change to principles, architecture boundaries, or
-	workflow requirements MUST be proposed via PR updating this file and
-	explaining the rationale and impact.
+  workflow requirements MUST be proposed via PR updating this file and
+  explaining the rationale and impact.
 - Compliance: SpecKit commands and review checklists MUST treat the
-	"Constitution Check" as a blocking gate for new features. Violations
-	MUST be explicitly documented and justified, not silently ignored.
-**Version**: 1.2.0 | **Ratified**: initial ratification date to be defined | **Last Amended**: 2025-12-09
+  "Constitution Check" as a blocking gate for new features. Violations
+  MUST be explicitly documented and justified, not silently ignored.
+  **Version**: 1.2.0 | **Ratified**: initial ratification date to be defined | **Last Amended**: 2025-12-09
