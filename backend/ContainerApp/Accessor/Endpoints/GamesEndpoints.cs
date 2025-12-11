@@ -1,7 +1,8 @@
-using Accessor.Models.Games;
+using Accessor.Mapping;
+using Accessor.Models.GameConfiguration;
+using Accessor.Models.Games.Requests;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Accessor.Models.GameConfiguration;
 
 namespace Accessor.Endpoints;
 
@@ -45,11 +46,16 @@ public static class GamesEndpoints
 
         try
         {
-            var result = await service.SubmitAttemptAsync(request, ct);
+            // Service returns DB model
+            var dbModel = await service.SubmitAttemptAsync(request, ct);
 
-            logger.LogInformation("SubmitAttemptAsync succeeded. StudentId={StudentId}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.Status, result.AttemptNumber);
+            // Map DB model to Response DTO
+            var response = dbModel.ToSubmitAttemptResponse();
 
-            return Results.Ok(result);
+            logger.LogInformation("SubmitAttemptAsync succeeded. StudentId={StudentId}, Status={Status}, AttemptNumber={AttemptNumber}",
+                response.StudentId, response.Status, response.AttemptNumber);
+
+            return Results.Ok(response);
         }
         catch (InvalidOperationException ex)
         {
@@ -85,20 +91,24 @@ public static class GamesEndpoints
             logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
                 studentId, summary, getPending, page, pageSize, fromDate, toDate);
 
-            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, fromDate, toDate, ct);
+            // Service returns internal DTO
+            var internalDto = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, fromDate, toDate, ct);
 
-            if (result.IsSummary)
+            // Map internal DTO to Response DTO
+            var response = internalDto.ToGetHistoryResponse();
+
+            if (response.IsSummary)
             {
                 logger.LogInformation("GetHistoryAsync returned {Records} summary records (page). TotalCount={TotalCount}",
-                    result.Summary?.Items.Count() ?? 0, result.Summary?.TotalCount ?? 0);
+                    response.Summary?.Items.Count ?? 0, response.Summary?.TotalCount ?? 0);
             }
             else
             {
                 logger.LogInformation("GetHistoryAsync returned {Records} detailed records (page). TotalCount={TotalCount}",
-                    result.Detailed?.Items.Count() ?? 0, result.Detailed?.TotalCount ?? 0);
+                    response.Detailed?.Items.Count ?? 0, response.Detailed?.TotalCount ?? 0);
             }
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -123,11 +133,15 @@ public static class GamesEndpoints
                 "GetMistakesAsync called. StudentId={StudentId}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
                 studentId, page, pageSize, fromDate, toDate);
 
-            var result = await service.GetMistakesAsync(studentId, page, pageSize, fromDate, toDate, ct);
+            // Service returns internal DTO
+            var internalDto = await service.GetMistakesAsync(studentId, page, pageSize, fromDate, toDate, ct);
 
-            logger.LogInformation("GetMistakesAsync returned {Records} mistakes (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
+            // Map internal DTO to Response DTO
+            var response = internalDto.ToGetMistakesResponse();
 
-            return Results.Ok(result);
+            logger.LogInformation("GetMistakesAsync returned {Records} mistakes (page). TotalCount={TotalCount}", response.Items.Count, response.TotalCount);
+
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -151,11 +165,15 @@ public static class GamesEndpoints
         {
             logger.LogInformation("GetAllHistoriesAsync called. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await service.GetHistoryAsync(page, pageSize, ct);
+            // Service returns internal DTO
+            var internalDto = await service.GetHistoryAsync(page, pageSize, ct);
 
-            logger.LogInformation("GetAllHistoriesAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
+            // Map internal DTO to Response DTO
+            var response = internalDto.ToGetAllHistoriesResponse();
 
-            return Results.Ok(result);
+            logger.LogInformation("GetAllHistoriesAsync returned {Records} records (page). TotalCount={TotalCount}", response.Items.Count, response.TotalCount);
+
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -175,11 +193,15 @@ public static class GamesEndpoints
         {
             logger.LogInformation("GetAttemptDetailsAsync called. UserId={UserId}, AttemptId={AttemptId}", userId, attemptId);
 
-            var result = await service.GetAttemptDetailsAsync(userId, attemptId, ct);
+            // Service returns internal DTO
+            var internalDto = await service.GetAttemptDetailsAsync(userId, attemptId, ct);
 
-            logger.LogInformation("GetAttemptDetailsAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}", userId, attemptId, result.GameType);
+            // Map internal DTO to Response DTO
+            var response = internalDto.ToGetAttemptDetailsResponse();
 
-            return Results.Ok(result);
+            logger.LogInformation("GetAttemptDetailsAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}", userId, attemptId, response.GameType);
+
+            return Results.Ok(response);
         }
         catch (InvalidOperationException ex)
         {
@@ -194,19 +216,24 @@ public static class GamesEndpoints
     }
 
     private static async Task<IResult> SaveGeneratedSentencesAsync(
-        [FromBody] GeneratedSentenceDto dto,
+        [FromBody] SaveGeneratedSentencesRequest request,
         [FromServices] IGameService gameService,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            var result = await gameService.SaveGeneratedSentencesAsync(dto, ct);
-            return Results.Ok(result);
+            // Service returns internal DTOs
+            var internalDtos = await gameService.SaveGeneratedSentencesAsync(request, ct);
+
+            // Map internal DTOs to Response DTO
+            var response = internalDtos.ToSaveGeneratedSentencesResponse();
+
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error saving generated sentence for StudentId={StudentId}", dto.StudentId);
+            logger.LogError(ex, "Error saving generated sentence for StudentId={StudentId}", request.StudentId);
             return Results.Problem("Failed to save generated sentence.");
         }
     }
@@ -240,14 +267,18 @@ public static class GamesEndpoints
         {
             logger.LogInformation("GetLastAttemptAsync called. UserId={UserId}", userId);
 
-            var result = await service.GetLastAttemptAsync(userId, gameType, ct);
+            // Service returns internal DTO
+            var internalDto = await service.GetLastAttemptAsync(userId, gameType, ct);
+
+            // Map internal DTO to Response DTO
+            var response = internalDto.ToGetLastAttemptResponse();
 
             logger.LogInformation(
                 "GetLastAttemptAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}",
-                userId, result.AttemptId, result.GameType
+                userId, response.AttemptId, response.GameType
             );
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (InvalidOperationException ex)
         {

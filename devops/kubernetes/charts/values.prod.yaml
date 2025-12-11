@@ -34,7 +34,6 @@ manager:
   image:
     name: manager  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
-  # service, ports, labels inherit from base values.yaml
   env:
     ASPNETCORE_URLS: "http://+:5001"
   # secrets inherit from base values.yaml

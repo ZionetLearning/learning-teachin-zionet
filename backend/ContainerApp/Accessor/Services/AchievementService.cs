@@ -45,32 +45,50 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<IReadOnlyList<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate, DateTime? toDate, CancellationToken ct)
+    public async Task<IReadOnlyList<UserUnlockedAchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate, DateTime? toDate, CancellationToken ct)
     {
         try
         {
-            var unlockedQuery = _context.UserAchievements
-                .Where(ua => ua.UserId == userId);
+            var query = _context.UserAchievements
+                .Where(ua => ua.UserId == userId)
+                .Join(
+                    _context.Achievements,
+                    ua => ua.AchievementId,
+                    a => a.AchievementId,
+                    (ua, a) => new { UserAchievement = ua, Achievement = a });
 
             if (fromDate.HasValue)
             {
-                unlockedQuery = unlockedQuery.Where(ua => ua.CreatedAt >= fromDate.Value || ua.UnlockedAt >= fromDate.Value);
+                query = query.Where(x => x.UserAchievement.UnlockedAt >= fromDate.Value);
             }
 
             if (toDate.HasValue)
             {
-                unlockedQuery = unlockedQuery.Where(ua => ua.CreatedAt <= toDate.Value || ua.UnlockedAt <= toDate.Value);
+                query = query.Where(x => x.UserAchievement.UnlockedAt <= toDate.Value);
             }
 
-            var unlockedAchievementIds = await unlockedQuery
-                .Select(ua => ua.AchievementId)
+            var results = await query
+                .OrderBy(x => x.Achievement.Feature)
+                .ThenBy(x => x.Achievement.TargetCount)
                 .ToListAsync(ct);
 
-            return await _context.Achievements
-                .Where(a => unlockedAchievementIds.Contains(a.AchievementId))
-                .OrderBy(a => a.Feature)
-                .ThenBy(a => a.TargetCount)
-                .ToListAsync(ct);
+            return results.Select(r => new UserUnlockedAchievementModel
+            {
+                // Achievement data
+                AchievementId = r.Achievement.AchievementId,
+                Key = r.Achievement.Key,
+                Name = r.Achievement.Name,
+                Description = r.Achievement.Description,
+                Type = r.Achievement.Type,
+                Feature = r.Achievement.Feature,
+                TargetCount = r.Achievement.TargetCount,
+                CreatedAt = r.Achievement.CreatedAt,
+                IsActive = r.Achievement.IsActive,
+                // UserAchievement data
+                UserAchievementId = r.UserAchievement.UserAchievementId,
+                UserId = r.UserAchievement.UserId,
+                UnlockedAt = r.UserAchievement.UnlockedAt
+            }).ToList();
         }
         catch (Exception ex)
         {

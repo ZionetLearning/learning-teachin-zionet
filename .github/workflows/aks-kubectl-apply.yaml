@@ -163,6 +163,12 @@ jobs:
           cd devops/helm-tools
           chmod +x keda.sh
           ./keda.sh
+      
+      - name: Setup ArgoCD
+        run: |
+          cd devops/helm-tools/argocd
+          chmod +x setup-argocd.sh
+          ./setup-argocd.sh
 
       # - name: Create devops-tools namespace
       #   run: |
