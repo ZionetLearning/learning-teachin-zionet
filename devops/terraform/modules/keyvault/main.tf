@@ -25,3 +25,51 @@ resource "azurerm_key_vault" "main" {
     ip_rules       = var.allowed_ip_ranges
   }
 }
+
+# Access policy for the current service principal/user
+resource "azurerm_key_vault_access_policy" "current_user" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id
+
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set",
+    "Delete",
+    "Recover",
+    "Backup",
+    "Restore",
+    "Purge"
+  ]
+
+  key_permissions = [
+    "Get",
+    "List",
+    "Create",
+    "Delete",
+    "Recover",
+    "Backup", 
+    "Restore",
+    "Purge",
+    "Decrypt",
+    "Encrypt",
+    "Sign",
+    "Verify",
+    "WrapKey",
+    "UnwrapKey"
+  ]
+
+  certificate_permissions = [
+    "Get",
+    "List",
+    "Create",
+    "Delete",
+    "Recover",
+    "Backup",
+    "Restore", 
+    "Purge",
+    "Import",
+    "Update"
+  ]
+}
