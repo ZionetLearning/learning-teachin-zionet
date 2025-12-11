@@ -1,3 +1,15 @@
+variable "subscription_id" {
+  description = "The subscription ID for the Azure account."
+  type        = string
+  default     = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+}
+
+variable "tenant_id" {
+  description = "The tenant ID for the Azure account."
+  type        = string
+  default     = "a814ee32-f813-4a36-9686-1b9268183e27"
+}
+
 variable "resource_group_name" {
   description = "The name of the Resource Group for the Terraform state storage."
   type        = string
