@@ -17,16 +17,16 @@
   the iteration process.
 -->
 
-**Language/Version**: [.NET 10 (TeachIn backend) or NEEDS CLARIFICATION]  
+**Language/Version**: [.NET 9 (TeachIn backend) or NEEDS CLARIFICATION]  
 **Primary Dependencies**: [Dapr, Azure Service Bus/queues, EF Core, SignalR or NEEDS CLARIFICATION]  
 **Storage**: [PostgreSQL via Accessor service or N/A]  
 **Testing**: [xUnit integration tests + unit tests or NEEDS CLARIFICATION]  
 **Target Platform**: [Containerized services via Docker/Dapr or NEEDS CLARIFICATION]
-**Project Type**: [Manager/Engine/Accessor backend feature - align with service boundaries]
+**Project Type**: [Manager/Engine/Accessor backend feature - align with service boundaries]  
 
 ## Constitution Check
 
-_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 - Service ownership: Does this feature clearly belong to Manager, Engine, Accessor, or a combination with explicit responsibilities?
 - Communication: Are all cross-service calls using Dapr (sync) or Azure Service Bus queues/bindings (async/callbacks), with no direct DB or ad-hoc HTTP between services?
@@ -48,7 +48,6 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. For TeachIn we only have backend services; update the
@@ -85,7 +84,7 @@ directories captured above]
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
-| -------------------------- | ------------------ | ------------------------------------ |
-| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
