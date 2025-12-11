@@ -69,3 +69,4 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 
 backend/IntegrationTest/.idea/.idea.IntegrationTest/.idea/*
 backend/IntegrationTest/.cr/personal
+/backend/ContainerApp/.env
