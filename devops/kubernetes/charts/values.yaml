@@ -158,7 +158,7 @@ learningManager:
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
-      memory: "256i"
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
