@@ -222,10 +222,11 @@ module "storage" {
   environment_name    = var.environment_name
 }
 
-# ------------- Key Vault for Dev Environment -----------------------
+# ------------- Key Vault for Dev/Prod Environment -----------------------
 module "keyvault_dev" {
+  count                 = contains(["dev", "prod"], var.environment_name) ? 1 : 0
   source                = "./modules/keyvault"
-  key_vault_name        = "dev-teachin-kv-test"
+  key_vault_name        = "${var.environment_name}-teachin-kv-test"
   resource_group_name   = azurerm_resource_group.main.name
   location              = var.location
   create_resource_group = false  # Use existing RG
