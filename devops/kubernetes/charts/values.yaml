@@ -344,7 +344,7 @@ storageAccessor:
       cpu: "500m"
       memory: "512Mi"
 
-database-accessor:
+databaseAccessor:
   name: database-accessor
   labels:
     selectorKey: app
