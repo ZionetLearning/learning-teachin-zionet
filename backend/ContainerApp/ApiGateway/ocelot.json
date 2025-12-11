@@ -97,6 +97,83 @@
       "DownstreamPathTemplate": "/internal/stats/latest",
       "RouteIsCaseSensitive": false
     },
+
+    // --- Learning Manager Service Routes ---
+    {
+      "UpstreamPathTemplate": "/learnings-manager/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "learning-manager",
+          "Port": 5030
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false,
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "JwtBearer",
+        "AllowedScopes": []
+      }
+    },
+
+    // --- AI Engine Service Routes ---
+    {
+      "UpstreamPathTemplate": "/ai-engine/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "aiengine",
+          "Port": 5020
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false,
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "JwtBearer",
+        "AllowedScopes": []
+      }
+    },
+
+    // --- Storage Accessor Service Routes ---
+    {
+      "UpstreamPathTemplate": "/storage-accessor/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "storage-accessor",
+          "Port": 5011
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false,
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "JwtBearer",
+        "AllowedScopes": []
+      }
+    },
+
+    // --- Database Accessor Service Routes ---
+    {
+      "UpstreamPathTemplate": "/database-accessor/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "database-accessor",
+          "Port": 5010
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false,
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "JwtBearer",
+        "AllowedScopes": []
+      }
+    },
+
     {
       "UpstreamPathTemplate": "/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH" ],
