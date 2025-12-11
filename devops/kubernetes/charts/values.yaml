@@ -158,7 +158,7 @@ learning-manager:
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
-      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+      memory: "256i"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -261,7 +261,7 @@ ai-engine:
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage
-      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -339,7 +339,7 @@ storage-accessor:
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
-      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -365,7 +365,7 @@ database-accessor:
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
-      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"

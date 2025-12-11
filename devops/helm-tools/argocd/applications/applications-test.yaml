@@ -7,38 +7,67 @@ metadata:
     # Enable image updater for multiple images
     argocd-image-updater.argoproj.io/image-list: >-
       manager=teachindevacr.azurecr.io/manager,
+      learning-manager=teachindevacr.azurecr.io/learning-manager,
       accessor=teachindevacr.azurecr.io/accessor,
-      engine=teachindevacr.azurecr.io/engine
+      storage-accessor=teachindevacr.azurecr.io/storage-accessor,
+      database-accessor=teachindevacr.azurecr.io/database-accessor,
+      engine=teachindevacr.azurecr.io/engine,
+      ai-engine=teachindevacr.azurecr.io/ai-engine
     
     # Update strategy for each image (newest-build, semver, etc.)
     argocd-image-updater.argoproj.io/manager.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/learning-manager.update-strategy: newest-build
     argocd-image-updater.argoproj.io/accessor.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/storage-accessor.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/database-accessor.update-strategy: newest-build
     argocd-image-updater.argoproj.io/engine.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/ai-engine.update-strategy: newest-build
     
     # Helm parameter paths - tell image updater which Helm values to update
     argocd-image-updater.argoproj.io/manager.helm.image-name: manager.image.repository
     argocd-image-updater.argoproj.io/manager.helm.image-tag: manager.image.tag
+    argocd-image-updater.argoproj.io/learning-manager.helm.image-name: learning-manager.image.repository
+    argocd-image-updater.argoproj.io/learning-manager.helm.image-tag: learning-manager.image.tag
     argocd-image-updater.argoproj.io/accessor.helm.image-name: accessor.image.repository
     argocd-image-updater.argoproj.io/accessor.helm.image-tag: accessor.image.tag
+    argocd-image-updater.argoproj.io/storage-accessor.helm.image-name: storage-accessor.image.repository
+    argocd-image-updater.argoproj.io/storage-accessor.helm.image-tag: storage-accessor.image.tag
+    argocd-image-updater.argoproj.io/database-accessor.helm.image-name: database-accessor.image.repository
+    argocd-image-updater.argoproj.io/database-accessor.helm.image-tag: database-accessor.image.tag
     argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
     argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
+    argocd-image-updater.argoproj.io/ai-engine.helm.image-name: ai-engine.image.repository
+    argocd-image-updater.argoproj.io/ai-engine.helm.image-tag: ai-engine.image.tag
     
     # Allow tags - only tags matching the environment
     argocd-image-updater.argoproj.io/manager.allow-tags: "test"
+    argocd-image-updater.argoproj.io/learning-manager.allow-tags: "test"
     argocd-image-updater.argoproj.io/accessor.allow-tags: "test"
+    argocd-image-updater.argoproj.io/storage-accessor.allow-tags: "test"
+    argocd-image-updater.argoproj.io/database-accessor.allow-tags: "test"
     argocd-image-updater.argoproj.io/engine.allow-tags: "test"
+    argocd-image-updater.argoproj.io/ai-engine.allow-tags: "test"
+
     # Write back method - use 'argocd' for parameter override or 'git' to commit changes
     argocd-image-updater.argoproj.io/write-back-method: argocd
     
     # Optional: Force update even if image already exists
     argocd-image-updater.argoproj.io/manager.force-update: "true"
+    argocd-image-updater.argoproj.io/learning-manager.force-update: "true"
     argocd-image-updater.argoproj.io/accessor.force-update: "true"
+    argocd-image-updater.argoproj.io/storage-accessor.force-update: "true"
+    argocd-image-updater.argoproj.io/database-accessor.force-update: "true"
     argocd-image-updater.argoproj.io/engine.force-update: "true"
+    argocd-image-updater.argoproj.io/ai-engine.force-update: "true"
     
     # Optional: Pull secret for private registry (using docker-registry format)
     argocd-image-updater.argoproj.io/manager.pull-secret: pullsecret:argocd/acr-credentials
+    argocd-image-updater.argoproj.io/learning-manager.pull-secret: pullsecret:argocd/acr-credentials
     argocd-image-updater.argoproj.io/accessor.pull-secret: pullsecret:argocd/acr-credentials
+    argocd-image-updater.argoproj.io/storage-accessor.pull-secret: pullsecret:argocd/acr-credentials
+    argocd-image-updater.argoproj.io/database-accessor.pull-secret: pullsecret:argocd/acr-credentials
     argocd-image-updater.argoproj.io/engine.pull-secret: pullsecret:argocd/acr-credentials
+    argocd-image-updater.argoproj.io/ai-engine.pull-secret: pullsecret:argocd/acr-credentials
 spec:
   project: default
   source:
