@@ -70,6 +70,7 @@ export const DetailPanelHeader = ({
             size="sm"
             onClick={onClose}
             title="Close panel"
+            aria-label="Close panel"
           >
             <X className="w-4 h-4" />
           </Button>
