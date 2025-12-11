@@ -1,16 +1,14 @@
 ﻿<#
 .SYNOPSIS
   Automatic local setup for developers.
-  TARGETS A SPECIFIC KEY VAULT ONLY.
-  - Logs into Azure
-  - Verifies access to the specific Key Vault
-  - Loads all secrets (With Progress Bar)
-  - Generates appsettings.Local.json with strict 2-space formatting
+  - STRICT matching: Only exact matches are filled.
+  - SAFE filling: Only empty/null values are updated.
+  - PRECISE: Uses a lookup index to prevent wrong secret injection.
 #>
 
 ### --- CONFIGURATION ---
 $TenantId     = "a814ee32-f813-4a36-9686-1b9268183e27"
-$KeyVaultName = "teachin-local-dev"  # <--- ENTER YOUR VAULT NAME HERE
+$KeyVaultName = "local-teachin-kv"  # <--- ENTER YOUR VAULT NAME HERE
 
 ### ---------------------------------------------------------------
 ### 1. ENSURE AZURE LOGIN
@@ -36,22 +34,17 @@ if (-not $currentTenant -or $currentTenant -ne $TenantId) {
 ### ---------------------------------------------------------------
 Write-Host "`nVerifying access to Key Vault: [$KeyVaultName]..." -ForegroundColor Cyan
 
-# Check if the specific vault exists and is accessible
 $vaultCheck = az keyvault show --name $KeyVaultName --query "name" -o tsv 2>$null
 
 if (-not $vaultCheck) {
     Write-Error "Error: Could not access Key Vault '$KeyVaultName'."
-    Write-Error "Possible causes:"
-    Write-Error "1. The name is incorrect."
-    Write-Error "2. You do not have 'Key Vault Secrets User' permissions."
-    Write-Error "3. You are logged into the wrong subscription."
     exit 1
 }
 
 Write-Host "Access confirmed." -ForegroundColor Green
 
 ### ---------------------------------------------------------------
-### 3. LOAD ALL SECRETS (WITH PROGRESS BAR)
+### 3. LOAD SECRETS & BUILD LOOKUP INDEX
 ### ---------------------------------------------------------------
 Write-Host "`nLoading secrets..." -ForegroundColor Cyan
 
@@ -59,7 +52,9 @@ $secretIds = az keyvault secret list --vault-name $KeyVaultName --query "[].id" 
 
 if (-not $secretIds) { Write-Warning "No secrets found in this vault."; exit 0 }
 
-$AzureSecrets = @{}
+# We build a 'Lookup Table' so matching is exact and impossible to mess up
+$SecretLookup = @{} 
+
 $total = $secretIds.Count
 $count = 0
 
@@ -70,22 +65,25 @@ foreach ($id in $secretIds) {
     
     Write-Progress -Activity "Downloading Secrets" -Status "Fetching $secretName ($count / $total)" -PercentComplete $pct
     
-    # Fetch secret value safely
     $s = az keyvault secret show --id $id 2>$null | ConvertFrom-Json
-    $AzureSecrets[$s.name] = $s.value
+    
+    # Create the Normalized Key for the Index
+    # e.g., "Tavily--ApiKey" -> "tavilyapikey"
+    $normKey = ($s.name -replace "[_\- ]","").ToLower()
+    $SecretLookup[$normKey] = $s.value
 }
 Write-Progress -Activity "Downloading Secrets" -Completed
-Write-Host "Loaded $($AzureSecrets.Count) secrets." -ForegroundColor Green
+Write-Host "Loaded $($SecretLookup.Count) secrets into index." -ForegroundColor Green
 
 ### ---------------------------------------------------------------
-### 4. KEY NORMALIZER
+### 4. KEY NORMALIZER HELPER
 ### ---------------------------------------------------------------
 function Get-NormalizedKey ($key) {
     return ($key -replace "[_\- ]","").ToLower()
 }
 
 ### ---------------------------------------------------------------
-### 5. UPDATE JSON OBJECT (Recursive & Array Aware)
+### 5. UPDATE JSON OBJECT (Precise Lookup)
 ### ---------------------------------------------------------------
 function Update-JsonObject {
     param (
@@ -113,12 +111,18 @@ function Update-JsonObject {
                 Update-JsonObject -JsonObject $p.Value -ParentPath $currentPath
             }
             else {
-                # Leaf check
-                $normalizedJsonKey = Get-NormalizedKey $currentPath
-                $match = $AzureSecrets.Keys | Where-Object { Get-NormalizedKey $_ -eq $normalizedJsonKey } | Select-Object -First 1
+                # 1. SKIP if value is NOT empty (Safety Check)
+                if (-not [string]::IsNullOrWhiteSpace($p.Value)) {
+                    continue
+                }
 
-                if ($match) {
-                    $p.Value = $AzureSecrets[$match]
+                # 2. Normalize the current JSON path
+                $normalizedJsonKey = Get-NormalizedKey $currentPath
+                
+                # 3. EXACT LOOKUP in our Index
+                if ($SecretLookup.ContainsKey($normalizedJsonKey)) {
+                    $p.Value = $SecretLookup[$normalizedJsonKey]
+                    Write-Host "   - Filled: $currentPath" -ForegroundColor DarkGray
                 }
             }
         }
