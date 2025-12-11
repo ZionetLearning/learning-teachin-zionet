@@ -1,0 +1,258 @@
+openapi: 3.0.0
+info:
+  title: Users API - Refactored Structure
+  version: 1.0.0
+  description: API contracts for Users and UserDetails endpoints after database refactor
+
+paths:
+  /users-accessor/{userId}:
+    get:
+      summary: Get user with details
+      operationId: getUserWithDetails
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User with details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithDetailsResponse'
+        '404':
+          description: User not found
+
+  /users-accessor:
+    post:
+      summary: Create user with details
+      operationId: createUserWithDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserWithDetailsRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithDetailsResponse'
+
+  /users-accessor/{userId}/details:
+    put:
+      summary: Update user details
+      operationId: updateUserDetails
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDetailsRequest'
+      responses:
+        '200':
+          description: User details updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailsResponse'
+
+components:
+  schemas:
+    UserWithDetailsResponse:
+      type: object
+      required:
+        - userId
+        - email
+        - role
+        - firstName
+        - lastName
+        - preferredLanguageCode
+        - interests
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          maxLength: 100
+        role:
+          type: string
+          enum: [Admin, Teacher, Student]
+        acsUserId:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferredLanguageCode:
+          type: string
+          enum: [en, he]
+          default: en
+        hebrewLevelValue:
+          type: string
+          enum: [beginner, intermediate, advanced, fluent]
+          nullable: true
+        interests:
+          type: array
+          items:
+            type: string
+          default: []
+        learningStyle:
+          type: string
+          nullable: true
+        priorKnowledge:
+          type: integer
+          nullable: true
+        profile:
+          type: string
+          nullable: true
+        avatarPath:
+          type: string
+          nullable: true
+        avatarContentType:
+          type: string
+          nullable: true
+        avatarUpdatedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateUserWithDetailsRequest:
+      type: object
+      required:
+        - email
+        - password
+        - role
+        - firstName
+        - lastName
+        - preferredLanguageCode
+        - interests
+      properties:
+        email:
+          type: string
+          maxLength: 100
+        password:
+          type: string
+          maxLength: 255
+        role:
+          type: string
+          enum: [Admin, Teacher, Student]
+        acsUserId:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferredLanguageCode:
+          type: string
+          enum: [en, he]
+          default: en
+        hebrewLevelValue:
+          type: string
+          enum: [beginner, intermediate, advanced, fluent]
+          nullable: true
+        interests:
+          type: array
+          items:
+            type: string
+          default: []
+        learningStyle:
+          type: string
+          nullable: true
+        priorKnowledge:
+          type: integer
+          nullable: true
+        profile:
+          type: string
+          nullable: true
+
+    UpdateUserDetailsRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferredLanguageCode:
+          type: string
+          enum: [en, he]
+        hebrewLevelValue:
+          type: string
+          enum: [beginner, intermediate, advanced, fluent]
+          nullable: true
+        interests:
+          type: array
+          items:
+            type: string
+        learningStyle:
+          type: string
+          nullable: true
+        priorKnowledge:
+          type: integer
+          nullable: true
+        profile:
+          type: string
+          nullable: true
+
+    UserDetailsResponse:
+      type: object
+      required:
+        - userId
+        - firstName
+        - lastName
+        - preferredLanguageCode
+        - interests
+      properties:
+        userId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferredLanguageCode:
+          type: string
+          enum: [en, he]
+        hebrewLevelValue:
+          type: string
+          enum: [beginner, intermediate, advanced, fluent]
+          nullable: true
+        interests:
+          type: array
+          items:
+            type: string
+        learningStyle:
+          type: string
+          nullable: true
+        priorKnowledge:
+          type: integer
+          nullable: true
+        profile:
+          type: string
+          nullable: true
+        avatarPath:
+          type: string
+          nullable: true
+        avatarContentType:
+          type: string
+          nullable: true
+        avatarUpdatedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+

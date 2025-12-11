@@ -1,0 +1,608 @@
+openapi: 3.0.0
+info:
+  title: Lessons API - Refactored Structure
+  version: 1.0.0
+  description: API contracts for Lessons, LessonTasks, Attendance, and Progress endpoints
+
+paths:
+  /lessons-accessor:
+    get:
+      summary: Get lessons by class
+      operationId: getLessonsByClass
+      parameters:
+        - name: classId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LessonResponse'
+
+    post:
+      summary: Create lesson with tasks
+      operationId: createLesson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLessonRequest'
+      responses:
+        '201':
+          description: Lesson created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonResponse'
+
+  /lessons-accessor/{lessonId}:
+    get:
+      summary: Get lesson by ID
+      operationId: getLessonById
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lesson details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonDetailResponse'
+        '404':
+          description: Lesson not found
+
+    put:
+      summary: Update lesson
+      operationId: updateLesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonRequest'
+      responses:
+        '200':
+          description: Lesson updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonResponse'
+
+    delete:
+      summary: Delete lesson
+      operationId: deleteLesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Lesson deleted
+        '404':
+          description: Lesson not found
+
+  /lessons-accessor/{lessonId}/tasks:
+    get:
+      summary: Get tasks for a lesson
+      operationId: getLessonTasks
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LessonTaskResponse'
+
+    post:
+      summary: Add task to lesson
+      operationId: addLessonTask
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLessonTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTaskResponse'
+
+  /lessons-accessor/{lessonId}/attendance:
+    get:
+      summary: Get attendance for a lesson
+      operationId: getLessonAttendance
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LessonAttendanceResponse'
+
+    post:
+      summary: Record attendance
+      operationId: recordAttendance
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAttendanceRequest'
+      responses:
+        '201':
+          description: Attendance recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonAttendanceResponse'
+
+    put:
+      summary: Update attendance
+      operationId: updateAttendance
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAttendanceRequest'
+      responses:
+        '200':
+          description: Attendance updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonAttendanceResponse'
+
+  /lessons-accessor/tasks/{taskId}/progress:
+    get:
+      summary: Get progress for a task
+      operationId: getTaskProgress
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Progress records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LessonTaskProgressResponse'
+
+    post:
+      summary: Record task progress
+      operationId: recordTaskProgress
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskProgressRequest'
+      responses:
+        '201':
+          description: Progress recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTaskProgressResponse'
+
+    put:
+      summary: Update task progress
+      operationId: updateTaskProgress
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskProgressRequest'
+      responses:
+        '200':
+          description: Progress updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTaskProgressResponse'
+
+components:
+  schemas:
+    LessonResponse:
+      type: object
+      required:
+        - lessonId
+        - classId
+        - title
+        - scheduledAt
+        - status
+        - createdBy
+        - createdAt
+      properties:
+        lessonId:
+          type: string
+          format: uuid
+        classId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          nullable: true
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+          description: 0=Planned, 1=InProgress, 2=Completed, 3=Cancelled
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    LessonDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/LessonResponse'
+        - type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/LessonTaskResponse'
+
+    CreateLessonRequest:
+      type: object
+      required:
+        - classId
+        - title
+        - scheduledAt
+        - createdBy
+        - tasks
+      properties:
+        classId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          nullable: true
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateLessonTaskRequest'
+          minItems: 1
+
+    UpdateLessonRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          nullable: true
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+
+    LessonTaskResponse:
+      type: object
+      required:
+        - lessonTaskId
+        - lessonId
+        - orderIndex
+        - title
+        - isRequired
+      properties:
+        lessonTaskId:
+          type: string
+          format: uuid
+        lessonId:
+          type: string
+          format: uuid
+        orderIndex:
+          type: integer
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        taskType:
+          type: string
+          nullable: true
+        expectedDurationMinutes:
+          type: integer
+          nullable: true
+        isRequired:
+          type: boolean
+
+    CreateLessonTaskRequest:
+      type: object
+      required:
+        - orderIndex
+        - title
+        - isRequired
+      properties:
+        orderIndex:
+          type: integer
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        taskType:
+          type: string
+          nullable: true
+        expectedDurationMinutes:
+          type: integer
+          nullable: true
+        isRequired:
+          type: boolean
+          default: true
+
+    LessonAttendanceResponse:
+      type: object
+      required:
+        - lessonId
+        - userId
+        - status
+      properties:
+        lessonId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+          description: 0=Absent, 1=Present, 2=Late, 3=Excused
+        joinedAt:
+          type: string
+          format: date-time
+          nullable: true
+        leftAt:
+          type: string
+          format: date-time
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+
+    CreateAttendanceRequest:
+      type: object
+      required:
+        - userId
+        - status
+      properties:
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+        joinedAt:
+          type: string
+          format: date-time
+          nullable: true
+        leftAt:
+          type: string
+          format: date-time
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+
+    UpdateAttendanceRequest:
+      type: object
+      properties:
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+        joinedAt:
+          type: string
+          format: date-time
+          nullable: true
+        leftAt:
+          type: string
+          format: date-time
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+
+    LessonTaskProgressResponse:
+      type: object
+      required:
+        - lessonTaskId
+        - userId
+        - status
+        - progressPercent
+        - lastUpdatedAt
+      properties:
+        lessonTaskId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+          description: 0=NotStarted, 1=InProgress, 2=Completed, 3=Skipped
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        score:
+          type: integer
+          nullable: true
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        comment:
+          type: string
+          nullable: true
+
+    CreateTaskProgressRequest:
+      type: object
+      required:
+        - userId
+        - status
+        - progressPercent
+      properties:
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        score:
+          type: integer
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+
+    UpdateTaskProgressRequest:
+      type: object
+      properties:
+        status:
+          type: integer
+          enum: [0, 1, 2, 3]
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        score:
+          type: integer
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+

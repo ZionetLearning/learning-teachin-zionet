@@ -1,0 +1,140 @@
+openapi: 3.0.0
+info:
+  title: Classes API - Updated Role Structure
+  version: 1.0.0
+  description: API contracts for Classes endpoints with integer role in ClassMemberships
+
+paths:
+  /classes-accessor/{classId}:
+    get:
+      summary: Get class with members
+      operationId: getClass
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Class details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassResponse'
+        '404':
+          description: Class not found
+
+  /classes-accessor/{classId}/members:
+    post:
+      summary: Add members to class
+      operationId: addMembers
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMembersRequest'
+      responses:
+        '200':
+          description: Members added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddMembersResponse'
+
+components:
+  schemas:
+    ClassResponse:
+      type: object
+      required:
+        - classId
+        - name
+        - createdAt
+        - members
+      properties:
+        classId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 50
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberResponse'
+
+    MemberResponse:
+      type: object
+      required:
+        - userId
+        - role
+        - addedBy
+        - addedAt
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: integer
+          enum: [0, 1]
+          description: 0=Student, 1=Teacher
+        addedBy:
+          type: string
+          format: uuid
+        addedAt:
+          type: string
+          format: date-time
+
+    AddMembersRequest:
+      type: object
+      required:
+        - userIds
+        - role
+        - addedBy
+      properties:
+        userIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        role:
+          type: integer
+          enum: [0, 1]
+          description: 0=Student, 1=Teacher
+        addedBy:
+          type: string
+          format: uuid
+
+    AddMembersResponse:
+      type: object
+      required:
+        - addedCount
+        - members
+      properties:
+        addedCount:
+          type: integer
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberResponse'
+
