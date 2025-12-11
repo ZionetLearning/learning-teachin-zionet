@@ -14,6 +14,12 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "create_resource_group" {
+  description = "Whether to create a new resource group or use existing one"
+  type        = bool
+  default     = true
+}
+
 variable "sku_name" {
   description = "SKU name for the Key Vault"
   type        = string
