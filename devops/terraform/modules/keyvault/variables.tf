@@ -72,3 +72,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "additional_user_object_ids" {
+  description = "List of additional user object IDs to grant access"
+  type        = list(string)
+  default     = []
+}

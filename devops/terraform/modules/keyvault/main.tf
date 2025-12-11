@@ -74,11 +74,12 @@ resource "azurerm_key_vault_access_policy" "current_user" {
   ]
 }
 
-# Access policy for your personal user (manual override)
-resource "azurerm_key_vault_access_policy" "personal_user" {
+# Access policies for additional users
+resource "azurerm_key_vault_access_policy" "additional_users" {
+  count        = length(var.additional_user_object_ids)
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = "40b32606-01be-4846-8d19-b44bc99f961e"  # Your personal user ID
+  object_id    = var.additional_user_object_ids[count.index]
 
   secret_permissions = [
     "Get",

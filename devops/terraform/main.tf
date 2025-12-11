@@ -229,6 +229,11 @@ module "keyvault_dev" {
   resource_group_name   = azurerm_resource_group.main.name
   location              = var.location
   create_resource_group = false  # Use existing RG
+  
+  additional_user_object_ids = [
+    "40b32606-01be-4846-8d19-b44bc99f961e"  # Your user ID
+    # "another-user-object-id"              # Add more users here
+  ]
 }
 
 # ------------- Key Vault for Local Environment -----------------------
@@ -238,6 +243,12 @@ module "keyvault_local" {
   resource_group_name   = "local-keyvault-rg"
   location              = var.location
   create_resource_group = true   # Create new RG
+  
+  additional_user_object_ids = [
+    "40b32606-01be-4846-8d19-b44bc99f961e",  # Your user ID
+    "9bbb8c26-7d7f-418c-9d26-df90bbf816aa"
+    # "another-user-object-id"              # Add more users here
+  ]
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
