@@ -49,7 +49,7 @@ manager:
 
 learningManager:
   image:
-    name: learningManager # Required: image name for the container
+    name: learning-manager # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:
@@ -92,7 +92,7 @@ engine:
 
 aiEngine:
   image:
-    name: aiEngine # Required: image name for the container
+    name: ai-engine # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5005"
@@ -106,14 +106,14 @@ accessor:
 
 storageAccessor:
   image:
-    name: storageAccessor # Required: image name for the container
+    name: storage-accessor # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5006"
 
 databaseAccessor:
   image:
-    name: databaseAccessor # Required: image name for the container
+    name: database-accessor # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5007"
