@@ -222,6 +222,11 @@ module "storage" {
   environment_name    = var.environment_name
 }
 
+# ------------- Communication Service -----------------------
+module "communication" {
+  source = "./modules/email-communication"
+}
+
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
 module "log_analytics" {
